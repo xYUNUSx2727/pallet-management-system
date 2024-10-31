@@ -23,6 +23,68 @@
 
             <div class="card mb-4">
                 <div class="card-header">
+                    <h3 class="card-title">Inventory Management</h3>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col">
+                            <h5>Current Stock: <span id="currentStock">{{ pallet.current_stock }}</span></h5>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <p><strong>Min Stock Level:</strong> {{ pallet.min_stock_level }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Max Stock Level:</strong> {{ pallet.max_stock_level }}</p>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col">
+                            <p><strong>Location:</strong> {{ pallet.location or 'Not specified' }}</p>
+                        </div>
+                    </div>
+                    
+                    <form id="inventoryForm" class="mb-3">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <select class="form-select" id="transactionType" required>
+                                    <option value="">Select Transaction Type</option>
+                                    <option value="IN">Stock In</option>
+                                    <option value="OUT">Stock Out</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <input type="number" class="form-control" id="quantity" placeholder="Quantity" required min="1">
+                            </div>
+                            <div class="col-12">
+                                <textarea class="form-control" id="notes" rows="2" placeholder="Transaction Notes"></textarea>
+                            </div>
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-primary">Update Inventory</button>
+                            </div>
+                        </div>
+                    </form>
+
+                    <h5>Transaction History</h5>
+                    <div class="table-responsive">
+                        <table class="table" id="transactionTable">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Type</th>
+                                    <th>Quantity</th>
+                                    <th>Notes</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mb-4">
+                <div class="card-header">
                     <h3 class="card-title">Visualization</h3>
                 </div>
                 <div class="card-body">
@@ -45,7 +107,7 @@
                     </div>
 
                     <div class="measurement-group">
-                        <h4>Bottom Closure</h4>
+                        <h4>Bottom Board</h4>
                         <p>Length: {{ pallet.bottom_length }}mm</p>
                         <p>Width: {{ pallet.bottom_width }}mm</p>
                         <p>Height: {{ pallet.bottom_height }}mm</p>
@@ -72,6 +134,7 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Visualization code (unchanged)
     const canvas = document.getElementById('palletVisualization');
     const ctx = canvas.getContext('2d');
     const pallet = {
@@ -89,16 +152,13 @@ document.addEventListener('DOMContentLoaded', function() {
         block_height: {{ pallet.block_height }}
     };
 
-    // Scale factor to fit the pallet in canvas
     const scale = Math.min(
         canvas.width / Math.max(pallet.top_length, pallet.bottom_length),
         canvas.height / (pallet.top_height + pallet.bottom_height + pallet.block_height)
     ) * 0.8;
 
-    // Set origin to center-bottom of canvas
     ctx.translate(canvas.width / 2, canvas.height - 20);
     
-    // Draw function for rectangular shapes
     function drawRect(x, y, width, height, color) {
         ctx.fillStyle = color;
         ctx.fillRect(x - width/2, -y - height, width, height);
@@ -106,10 +166,8 @@ document.addEventListener('DOMContentLoaded', function() {
         ctx.strokeRect(x - width/2, -y - height, width, height);
     }
 
-    // Draw bottom closure
     drawRect(0, 0, pallet.bottom_length * scale, pallet.bottom_height * scale, '#666');
 
-    // Draw blocks (simplified as 3x3 grid)
     const blockSpacingX = pallet.bottom_length * scale / 4;
     const blockSpacingY = pallet.bottom_width * scale / 4;
     const blockHeight = pallet.block_height * scale;
@@ -122,9 +180,68 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Draw top board
     drawRect(0, (pallet.bottom_height + pallet.block_height) * scale,
             pallet.top_length * scale, pallet.top_height * scale, '#888');
+
+    // Inventory Management
+    const inventoryForm = document.getElementById('inventoryForm');
+    const transactionTable = document.getElementById('transactionTable').getElementsByTagName('tbody')[0];
+
+    // Load transaction history
+    async function loadTransactionHistory() {
+        const response = await fetch(`/api/inventory/{{ pallet.id }}/history`);
+        const transactions = await response.json();
+        
+        transactionTable.innerHTML = '';
+        transactions.forEach(transaction => {
+            const row = transactionTable.insertRow();
+            row.innerHTML = `
+                <td>${transaction.date}</td>
+                <td>${transaction.type}</td>
+                <td>${transaction.quantity}</td>
+                <td>${transaction.notes}</td>
+            `;
+        });
+    }
+
+    // Handle inventory updates
+    inventoryForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const type = document.getElementById('transactionType').value;
+        const quantity = parseInt(document.getElementById('quantity').value);
+        const notes = document.getElementById('notes').value;
+
+        try {
+            const response = await fetch(`/api/inventory/{{ pallet.id }}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ type, quantity, notes })
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.error || 'Failed to update inventory');
+            }
+
+            const result = await response.json();
+            document.getElementById('currentStock').textContent = result.current_stock;
+            
+            // Reset form
+            inventoryForm.reset();
+            
+            // Reload transaction history
+            await loadTransactionHistory();
+
+        } catch (error) {
+            alert(error.message);
+        }
+    });
+
+    // Initial load of transaction history
+    loadTransactionHistory();
 });
 </script>
 {% endblock %}

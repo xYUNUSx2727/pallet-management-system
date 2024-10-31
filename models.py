@@ -14,6 +14,12 @@ class Pallet(db.Model):
     company_id = db.Column(db.Integer, db.ForeignKey('company.id'), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
+    # Inventory tracking
+    current_stock = db.Column(db.Integer, default=0)
+    min_stock_level = db.Column(db.Integer, default=0)
+    max_stock_level = db.Column(db.Integer, default=0)
+    location = db.Column(db.String(100))
+
     # Top board dimensions
     top_length = db.Column(db.Float, nullable=False)
     top_width = db.Column(db.Float, nullable=False)
@@ -39,3 +45,13 @@ class Pallet(db.Model):
 
     def __repr__(self):
         return f'<Pallet {self.name}>'
+
+class InventoryTransaction(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    pallet_id = db.Column(db.Integer, db.ForeignKey('pallet.id'), nullable=False)
+    transaction_type = db.Column(db.String(20), nullable=False)  # 'IN' or 'OUT'
+    quantity = db.Column(db.Integer, nullable=False)
+    transaction_date = db.Column(db.DateTime, default=datetime.utcnow)
+    notes = db.Column(db.Text)
+    
+    pallet = db.relationship('Pallet', backref='transactions')

@@ -14,6 +14,8 @@
             <tr>
                 <th>Name</th>
                 <th>Company</th>
+                <th>Current Stock</th>
+                <th>Location</th>
                 <th>Volume (m³)</th>
                 <th>Actions</th>
             </tr>
@@ -23,6 +25,12 @@
             <tr>
                 <td>{{ pallet.name }}</td>
                 <td>{{ pallet.company.name }}</td>
+                <td>
+                    <span class="badge bg-{{ 'danger' if pallet.current_stock <= pallet.min_stock_level else 'success' }}">
+                        {{ pallet.current_stock }}
+                    </span>
+                </td>
+                <td>{{ pallet.location or 'Not specified' }}</td>
                 <td>{{ pallet.total_volume }}</td>
                 <td>
                     <button class="btn btn-sm btn-info view-pallet" data-id="{{ pallet.id }}">
@@ -67,61 +75,78 @@
                         </div>
                     </div>
 
-                    <div class="mb-3">
-                        <label class="form-label">Board Thickness (mm)</label>
-                        <input type="number" class="form-control" id="boardThickness" required>
-                    </div>
-
                     <div class="measurement-group">
-                        <h4>Upper Board</h4>
+                        <h4>Inventory Settings</h4>
                         <div class="row">
-                            <div class="col-md-4">
-                                <label class="form-label">Length (mm)</label>
-                                <input type="number" class="form-control" id="upperBoardLength" required>
+                            <div class="col-md-3">
+                                <label class="form-label">Initial Stock</label>
+                                <input type="number" class="form-control" id="currentStock" value="0" min="0">
                             </div>
-                            <div class="col-md-4">
-                                <label class="form-label">Width (mm)</label>
-                                <input type="number" class="form-control" id="upperBoardWidth" required>
+                            <div class="col-md-3">
+                                <label class="form-label">Min Stock Level</label>
+                                <input type="number" class="form-control" id="minStockLevel" value="0" min="0">
                             </div>
-                            <div class="col-md-4">
-                                <label class="form-label">Quantity</label>
-                                <input type="number" class="form-control" id="upperBoardQuantity" required>
+                            <div class="col-md-3">
+                                <label class="form-label">Max Stock Level</label>
+                                <input type="number" class="form-control" id="maxStockLevel" value="0" min="0">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Location</label>
+                                <input type="text" class="form-control" id="location" placeholder="e.g., Warehouse A">
                             </div>
                         </div>
                     </div>
 
                     <div class="measurement-group">
-                        <h4>Lower Board</h4>
+                        <h4>Top Board</h4>
                         <div class="row">
                             <div class="col-md-4">
                                 <label class="form-label">Length (mm)</label>
-                                <input type="number" class="form-control" id="lowerBoardLength" required>
+                                <input type="number" class="form-control" id="topLength" required>
                             </div>
                             <div class="col-md-4">
                                 <label class="form-label">Width (mm)</label>
-                                <input type="number" class="form-control" id="lowerBoardWidth" required>
+                                <input type="number" class="form-control" id="topWidth" required>
                             </div>
                             <div class="col-md-4">
-                                <label class="form-label">Quantity</label>
-                                <input type="number" class="form-control" id="lowerBoardQuantity" required>
+                                <label class="form-label">Height (mm)</label>
+                                <input type="number" class="form-control" id="topHeight" required>
                             </div>
                         </div>
                     </div>
 
                     <div class="measurement-group">
-                        <h4>Closure</h4>
+                        <h4>Bottom Board</h4>
                         <div class="row">
                             <div class="col-md-4">
                                 <label class="form-label">Length (mm)</label>
-                                <input type="number" class="form-control" id="closureLength" required>
+                                <input type="number" class="form-control" id="bottomLength" required>
                             </div>
                             <div class="col-md-4">
                                 <label class="form-label">Width (mm)</label>
-                                <input type="number" class="form-control" id="closureWidth" required>
+                                <input type="number" class="form-control" id="bottomWidth" required>
                             </div>
                             <div class="col-md-4">
-                                <label class="form-label">Quantity</label>
-                                <input type="number" class="form-control" id="closureQuantity" required>
+                                <label class="form-label">Height (mm)</label>
+                                <input type="number" class="form-control" id="bottomHeight" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="measurement-group">
+                        <h4>Chassis</h4>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <label class="form-label">Length (mm)</label>
+                                <input type="number" class="form-control" id="chassisLength" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Width (mm)</label>
+                                <input type="number" class="form-control" id="chassisWidth" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Height (mm)</label>
+                                <input type="number" class="form-control" id="chassisHeight" required>
                             </div>
                         </div>
                     </div>
