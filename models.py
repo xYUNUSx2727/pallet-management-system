@@ -13,6 +13,7 @@ class Pallet(db.Model):
     name = db.Column(db.String(100), nullable=False)
     company_id = db.Column(db.Integer, db.ForeignKey('company.id'), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    price = db.Column(db.Float, nullable=False, default=0.0)
 
     # Board dimensions (all measurements in cm)
     board_thickness = db.Column(db.Float, nullable=False)
@@ -29,7 +30,11 @@ class Pallet(db.Model):
     block_width = db.Column(db.Float, nullable=False)
     block_height = db.Column(db.Float, nullable=False)
 
-    # Total volume in desi (1 desi = 1000 cm³)
+    # Volume calculations in desi (1 desi = 1000 cm³)
+    upper_board_desi = db.Column(db.Float)
+    lower_board_desi = db.Column(db.Float)
+    closure_desi = db.Column(db.Float)
+    block_desi = db.Column(db.Float)
     total_volume = db.Column(db.Float)
 
     def __repr__(self):

@@ -1,7 +1,7 @@
 from flask import render_template, request, jsonify, flash, redirect, url_for, send_file
 from app import app, db
 from models import Company, Pallet
-from utils import calculate_pallet_volume
+from utils import calculate_component_volumes
 from datetime import datetime
 import csv
 import io
@@ -35,7 +35,9 @@ def export_pallets_csv():
     output = io.StringIO()
     writer = csv.writer(output)
     
-    writer.writerow(['ID', 'İsim', 'Firma', 'Toplam Hacim (desi)',
+    writer.writerow(['ID', 'İsim', 'Firma', 'Fiyat (TL)', 
+                    'Üst Tahta Desi', 'Alt Tahta Desi', 
+                    'Kapatma Desi', 'Takoz Desi (9 adet)', 'Toplam Desi',
                     'Tahta Kalınlığı (cm)', 'Üst Tahta Uzunluğu (cm)', 
                     'Üst Tahta Genişliği (cm)', 'Üst Tahta Adedi',
                     'Alt Tahta Uzunluğu (cm)', 'Alt Tahta Genişliği (cm)', 
@@ -46,15 +48,17 @@ def export_pallets_csv():
     
     pallets = Pallet.query.all()
     for pallet in pallets:
+        volumes = calculate_component_volumes(pallet)
         writer.writerow([
-            pallet.id, pallet.name, pallet.company.name,
-            pallet.total_volume, pallet.board_thickness,
-            pallet.upper_board_length, pallet.upper_board_width,
-            pallet.upper_board_quantity, pallet.lower_board_length,
-            pallet.lower_board_width, pallet.lower_board_quantity,
-            pallet.closure_length, pallet.closure_width,
-            pallet.closure_quantity, pallet.block_length,
-            pallet.block_width, pallet.block_height
+            pallet.id, pallet.name, pallet.company.name, pallet.price,
+            volumes['upper_board_desi'], volumes['lower_board_desi'],
+            volumes['closure_desi'], volumes['block_desi'], volumes['total_desi'],
+            pallet.board_thickness, pallet.upper_board_length,
+            pallet.upper_board_width, pallet.upper_board_quantity,
+            pallet.lower_board_length, pallet.lower_board_width,
+            pallet.lower_board_quantity, pallet.closure_length,
+            pallet.closure_width, pallet.closure_quantity,
+            pallet.block_length, pallet.block_width, pallet.block_height
         ])
     
     output.seek(0)
@@ -75,17 +79,23 @@ def export_pallets_pdf():
     elements.append(Paragraph("Palet Yönetim Sistemi - Dışa Aktarım", styles['Title']))
     elements.append(Paragraph(f"Oluşturma Tarihi: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}", styles['Normal']))
     
-    data = [['ID', 'İsim', 'Firma', 'Hacim (desi)', 'Kalınlık (cm)', 'Üst Tahta (cm)', 'Alt Tahta (cm)']]
+    data = [['ID', 'İsim', 'Firma', 'Fiyat (TL)', 'Desi Hesapları']]
     pallets = Pallet.query.all()
     for pallet in pallets:
+        volumes = calculate_component_volumes(pallet)
+        desi_details = (
+            f"Üst Tahta: {volumes['upper_board_desi']}\n"
+            f"Alt Tahta: {volumes['lower_board_desi']}\n"
+            f"Kapatma: {volumes['closure_desi']}\n"
+            f"Takoz (9): {volumes['block_desi']}\n"
+            f"Toplam: {volumes['total_desi']}"
+        )
         data.append([
             str(pallet.id),
             pallet.name,
             pallet.company.name,
-            str(pallet.total_volume),
-            str(pallet.board_thickness),
-            f"{pallet.upper_board_length}x{pallet.upper_board_width}",
-            f"{pallet.lower_board_length}x{pallet.lower_board_width}"
+            f"{pallet.price:.2f}",
+            desi_details
         ])
     
     table = Table(data)
@@ -103,6 +113,8 @@ def export_pallets_pdf():
         ('GRID', (0, 0), (-1, -1), 1, colors.black),
         ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('ALIGN', (4, 1), (4, -1), 'LEFT'),
+        ('TEXTCOLOR', (4, 1), (4, -1), colors.black),
     ]))
     elements.append(table)
     
@@ -177,9 +189,11 @@ def handle_pallets():
             closure_quantity=data['closure_quantity'],
             block_length=data['block_length'],
             block_width=data['block_width'],
-            block_height=data['block_height']
+            block_height=data['block_height'],
+            price=data.get('price', 0)
         )
-        pallet.total_volume = calculate_pallet_volume(pallet)
+        volumes = calculate_component_volumes(pallet)
+        pallet.total_volume = volumes['total_desi']
         db.session.add(pallet)
         db.session.commit()
         return jsonify({'message': 'Palet başarıyla oluşturuldu'}), 201
@@ -190,6 +204,7 @@ def handle_pallets():
         'name': p.name,
         'company_id': p.company_id,
         'company_name': p.company.name,
+        'price': p.price,
         'total_volume': p.total_volume,
         'board_thickness': p.board_thickness,
         'upper_board_length': p.upper_board_length,
@@ -216,6 +231,7 @@ def handle_pallet(pallet_id):
             'name': pallet.name,
             'company_id': pallet.company_id,
             'company_name': pallet.company.name,
+            'price': pallet.price,
             'total_volume': pallet.total_volume,
             'board_thickness': pallet.board_thickness,
             'upper_board_length': pallet.upper_board_length,
@@ -236,7 +252,8 @@ def handle_pallet(pallet_id):
         data = request.json
         for key, value in data.items():
             setattr(pallet, key, value)
-        pallet.total_volume = calculate_pallet_volume(pallet)
+        volumes = calculate_component_volumes(pallet)
+        pallet.total_volume = volumes['total_desi']
         db.session.commit()
         return jsonify({'message': 'Palet başarıyla güncellendi'})
     

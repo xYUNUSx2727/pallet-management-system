@@ -1,5 +1,6 @@
-def calculate_pallet_volume(pallet):
-    """Calculate total volume of pallet in desi (1 desi = 1000 cm³)"""
+def calculate_component_volumes(pallet):
+    """Calculate individual and total volumes of pallet components in desi (1 desi = 1000 cm³)"""
+    
     # Calculate upper boards volume
     upper_board_volume = (
         pallet.upper_board_length * 
@@ -7,6 +8,7 @@ def calculate_pallet_volume(pallet):
         pallet.board_thickness * 
         pallet.upper_board_quantity
     )
+    upper_board_desi = round(upper_board_volume / 1000, 2)
     
     # Calculate lower boards volume
     lower_board_volume = (
@@ -15,6 +17,7 @@ def calculate_pallet_volume(pallet):
         pallet.board_thickness * 
         pallet.lower_board_quantity
     )
+    lower_board_desi = round(lower_board_volume / 1000, 2)
     
     # Calculate closure boards volume
     closure_volume = (
@@ -23,16 +26,23 @@ def calculate_pallet_volume(pallet):
         pallet.board_thickness * 
         pallet.closure_quantity
     )
+    closure_desi = round(closure_volume / 1000, 2)
     
-    # Calculate blocks volume
+    # Calculate blocks volume (fixed 9 blocks)
     block_volume = (
         pallet.block_length * 
         pallet.block_width * 
-        pallet.block_height
+        pallet.block_height * 9  # Fixed 9 blocks
     )
+    block_desi = round(block_volume / 1000, 2)
     
-    # Total volume in cubic centimeters
-    total_volume_cm3 = upper_board_volume + lower_board_volume + closure_volume + block_volume
+    # Total desi
+    total_desi = round(upper_board_desi + lower_board_desi + closure_desi + block_desi, 2)
     
-    # Convert to desi (1 desi = 1000 cm³) and round to 2 decimal places
-    return round(total_volume_cm3 / 1000, 2)
+    return {
+        'upper_board_desi': upper_board_desi,
+        'lower_board_desi': lower_board_desi,
+        'closure_desi': closure_desi,
+        'block_desi': block_desi,
+        'total_desi': total_desi
+    }
