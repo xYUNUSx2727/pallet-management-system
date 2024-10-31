@@ -26,10 +26,10 @@ document.addEventListener('DOMContentLoaded', function() {
             if (response.ok) {
                 location.reload();
             } else {
-                alert('Şirket kaydedilirken bir hata oluştu');
+                alert('Error saving company');
             }
         } catch (error) {
-            console.error('Hata:', error);
+            console.error('Error:', error);
         }
     });
 
@@ -51,7 +51,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Delete Company
     document.querySelectorAll('.delete-company').forEach(button => {
         button.addEventListener('click', async (e) => {
-            if (confirm('Bu şirketi silmek istediğinizden emin misiniz?')) {
+            if (confirm('Are you sure you want to delete this company?')) {
                 const companyId = e.target.dataset.id;
                 
                 try {
@@ -62,10 +62,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (response.ok) {
                         location.reload();
                     } else {
-                        alert('Şirket silinirken bir hata oluştu');
+                        alert('Error deleting company');
                     }
                 } catch (error) {
-                    console.error('Hata:', error);
+                    console.error('Error:', error);
                 }
             }
         });

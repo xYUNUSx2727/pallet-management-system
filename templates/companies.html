@@ -2,9 +2,9 @@
 
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h1>Şirketler</h1>
+    <h1>Companies</h1>
     <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#companyModal">
-        <i class="fas fa-plus me-2"></i>Şirket Ekle
+        <i class="fas fa-plus me-2"></i>Add Company
     </button>
 </div>
 
@@ -12,10 +12,10 @@
     <table class="table">
         <thead>
             <tr>
-                <th>Şirket Adı</th>
-                <th>İletişim E-postası</th>
-                <th>Palet Sayısı</th>
-                <th>İşlemler</th>
+                <th>Company Name</th>
+                <th>Contact Email</th>
+                <th>Pallets</th>
+                <th>Actions</th>
             </tr>
         </thead>
         <tbody id="companiesList">
@@ -26,10 +26,10 @@
                 <td>{{ company.pallets|length }}</td>
                 <td>
                     <button class="btn btn-sm btn-secondary edit-company" data-id="{{ company.id }}">
-                        <i class="fas fa-edit me-1"></i>Düzenle
+                        <i class="fas fa-edit me-1"></i>Edit
                     </button>
                     <button class="btn btn-sm btn-danger delete-company" data-id="{{ company.id }}">
-                        <i class="fas fa-trash me-1"></i>Sil
+                        <i class="fas fa-trash me-1"></i>Delete
                     </button>
                 </td>
             </tr>
@@ -43,25 +43,25 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Şirket Ekle/Düzenle</h5>
+                <h5 class="modal-title">Add/Edit Company</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
                 <form id="companyForm">
                     <input type="hidden" id="companyId">
                     <div class="mb-3">
-                        <label class="form-label">Şirket Adı</label>
+                        <label class="form-label">Company Name</label>
                         <input type="text" class="form-control" id="companyName" required>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">İletişim E-postası</label>
+                        <label class="form-label">Contact Email</label>
                         <input type="email" class="form-control" id="companyEmail" required>
                     </div>
                 </form>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
-                <button type="button" class="btn btn-primary" id="saveCompany">Kaydet</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="saveCompany">Save</button>
             </div>
         </div>
     </div>

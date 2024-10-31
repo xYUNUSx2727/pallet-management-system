@@ -9,15 +9,16 @@ document.addEventListener('DOMContentLoaded', function() {
         const palletData = {
             name: document.getElementById('palletName').value,
             company_id: document.getElementById('companySelect').value,
-            top_length: parseFloat(document.getElementById('topLength').value),
-            top_width: parseFloat(document.getElementById('topWidth').value),
-            top_height: parseFloat(document.getElementById('topHeight').value),
-            bottom_length: parseFloat(document.getElementById('bottomLength').value),
-            bottom_width: parseFloat(document.getElementById('bottomWidth').value),
-            bottom_height: parseFloat(document.getElementById('bottomHeight').value),
-            chassis_length: parseFloat(document.getElementById('chassisLength').value),
-            chassis_width: parseFloat(document.getElementById('chassisWidth').value),
-            chassis_height: parseFloat(document.getElementById('chassisHeight').value),
+            board_thickness: parseFloat(document.getElementById('boardThickness').value),
+            upper_board_length: parseFloat(document.getElementById('upperBoardLength').value),
+            upper_board_width: parseFloat(document.getElementById('upperBoardWidth').value),
+            upper_board_quantity: parseInt(document.getElementById('upperBoardQuantity').value),
+            lower_board_length: parseFloat(document.getElementById('lowerBoardLength').value),
+            lower_board_width: parseFloat(document.getElementById('lowerBoardWidth').value),
+            lower_board_quantity: parseInt(document.getElementById('lowerBoardQuantity').value),
+            closure_length: parseFloat(document.getElementById('closureLength').value),
+            closure_width: parseFloat(document.getElementById('closureWidth').value),
+            closure_quantity: parseInt(document.getElementById('closureQuantity').value),
             block_length: parseFloat(document.getElementById('blockLength').value),
             block_width: parseFloat(document.getElementById('blockWidth').value),
             block_height: parseFloat(document.getElementById('blockHeight').value)
@@ -56,16 +57,16 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('palletName').value = pallet.name;
             document.getElementById('companySelect').value = pallet.company_id;
             
-            // Set all dimensions
-            document.getElementById('topLength').value = pallet.top_length;
-            document.getElementById('topWidth').value = pallet.top_width;
-            document.getElementById('topHeight').value = pallet.top_height;
-            document.getElementById('bottomLength').value = pallet.bottom_length;
-            document.getElementById('bottomWidth').value = pallet.bottom_width;
-            document.getElementById('bottomHeight').value = pallet.bottom_height;
-            document.getElementById('chassisLength').value = pallet.chassis_length;
-            document.getElementById('chassisWidth').value = pallet.chassis_width;
-            document.getElementById('chassisHeight').value = pallet.chassis_height;
+            document.getElementById('boardThickness').value = pallet.board_thickness;
+            document.getElementById('upperBoardLength').value = pallet.upper_board_length;
+            document.getElementById('upperBoardWidth').value = pallet.upper_board_width;
+            document.getElementById('upperBoardQuantity').value = pallet.upper_board_quantity;
+            document.getElementById('lowerBoardLength').value = pallet.lower_board_length;
+            document.getElementById('lowerBoardWidth').value = pallet.lower_board_width;
+            document.getElementById('lowerBoardQuantity').value = pallet.lower_board_quantity;
+            document.getElementById('closureLength').value = pallet.closure_length;
+            document.getElementById('closureWidth').value = pallet.closure_width;
+            document.getElementById('closureQuantity').value = pallet.closure_quantity;
             document.getElementById('blockLength').value = pallet.block_length;
             document.getElementById('blockWidth').value = pallet.block_width;
             document.getElementById('blockHeight').value = pallet.block_height;
