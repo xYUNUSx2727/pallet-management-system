@@ -40,10 +40,10 @@ document.addEventListener('DOMContentLoaded', function() {
             if (response.ok) {
                 location.reload();
             } else {
-                alert('Error saving pallet');
+                alert('Palet kaydedilirken bir hata oluştu');
             }
         } catch (error) {
-            console.error('Error:', error);
+            console.error('Hata:', error);
         }
     });
 
@@ -94,10 +94,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (response.ok) {
                         location.reload();
                     } else {
-                        alert('Error deleting pallet');
+                        alert('Palet silinirken bir hata oluştu');
                     }
                 } catch (error) {
-                    console.error('Error:', error);
+                    console.error('Hata:', error);
                 }
             }
         });
