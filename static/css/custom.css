@@ -1,27 +1,103 @@
-.pallet-visualization {
-    border: 1px solid var(--bs-secondary);
+/* General Styles */
+body {
+    min-height: 100vh;
     background: var(--bs-dark);
-    margin: 1rem 0;
 }
 
-.table-responsive {
-    border-radius: 0.25rem;
+/* Card Styles */
+.card {
+    border: 1px solid var(--bs-secondary);
     background: var(--bs-dark);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    margin-bottom: 1.5rem;
+}
+
+.card-header {
+    background: var(--bs-dark);
+    border-bottom: 1px solid var(--bs-secondary);
     padding: 1rem;
 }
 
+.card-title {
+    color: var(--bs-info);
+    margin: 0;
+}
+
+.card-body {
+    padding: 1.5rem;
+}
+
+/* Table Styles */
+.table-responsive {
+    background: var(--bs-dark);
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+    border: 1px solid var(--bs-secondary);
+}
+
+.table {
+    margin-bottom: 0;
+}
+
+.table th {
+    color: var(--bs-info);
+    font-weight: 600;
+    border-bottom: 2px solid var(--bs-secondary);
+}
+
+/* Form Styles */
 .form-group {
-    margin-bottom: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.form-label {
+    color: var(--bs-info);
+    font-weight: 500;
+    margin-bottom: 0.5rem;
 }
 
 .measurement-group {
     background: var(--bs-dark);
-    padding: 1rem;
-    border-radius: 0.25rem;
-    margin-bottom: 1rem;
+    padding: 1.5rem;
+    border-radius: 0.5rem;
+    margin-bottom: 1.5rem;
+    border: 1px solid var(--bs-secondary);
 }
 
 .measurement-group h4 {
     color: var(--bs-info);
     margin-bottom: 1rem;
+    font-size: 1.1rem;
+}
+
+/* Visualization */
+.pallet-visualization {
+    border: 1px solid var(--bs-secondary);
+    background: var(--bs-dark);
+    margin: 1rem 0;
+    border-radius: 0.5rem;
+}
+
+/* Modal Styles */
+.modal-content {
+    background: var(--bs-dark);
+    border: 1px solid var(--bs-secondary);
+}
+
+.modal-header {
+    border-bottom: 1px solid var(--bs-secondary);
+}
+
+.modal-footer {
+    border-top: 1px solid var(--bs-secondary);
+}
+
+/* Button Styles */
+.btn {
+    padding: 0.5rem 1rem;
+    font-weight: 500;
+}
+
+.btn-group-sm > .btn, .btn-sm {
+    padding: 0.25rem 0.75rem;
 }
