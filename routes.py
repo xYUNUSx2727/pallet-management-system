@@ -3,12 +3,14 @@ from app import app, db
 from models import Company, Pallet
 from utils import calculate_component_volumes
 from datetime import datetime
+from sqlalchemy import func
 import csv
 import io
 from reportlab.lib import colors
-from reportlab.lib.pagesizes import letter
+from reportlab.lib.pagesizes import A4, landscape
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph
-from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.units import cm
 
 @app.route('/')
 def index():
@@ -29,6 +31,89 @@ def pallets():
 def pallet_details(pallet_id):
     pallet = Pallet.query.get_or_404(pallet_id)
     return render_template('pallet_details.html', pallet=pallet)
+
+@app.route('/dashboard')
+def dashboard():
+    stats = {
+        'total_pallets': Pallet.query.count(),
+        'total_companies': Company.query.count(),
+        'avg_price': db.session.query(func.avg(Pallet.price)).scalar() or 0
+    }
+
+    volumes = db.session.query(Pallet.total_volume).all()
+    if volumes:
+        volumes = [v[0] for v in volumes if v[0] is not None]
+        min_vol, max_vol = min(volumes), max(volumes)
+        range_size = (max_vol - min_vol) / 5 if max_vol > min_vol else 1
+        
+        volume_ranges = [
+            f"{(min_vol + i*range_size):.1f} - {(min_vol + (i+1)*range_size):.1f}"
+            for i in range(5)
+        ]
+        
+        volume_distribution = [0] * 5
+        for vol in volumes:
+            idx = min(int((vol - min_vol) / range_size), 4)
+            volume_distribution[idx] += 1
+    else:
+        volume_ranges = []
+        volume_distribution = []
+
+    prices = db.session.query(Pallet.price).all()
+    if prices:
+        prices = [p[0] for p in prices if p[0] is not None]
+        min_price, max_price = min(prices), max(prices)
+        price_range_size = (max_price - min_price) / 5 if max_price > min_price else 1
+        
+        price_ranges = [
+            f"{(min_price + i*price_range_size):.0f} - {(min_price + (i+1)*price_range_size):.0f} TL"
+            for i in range(5)
+        ]
+        
+        price_distribution = [0] * 5
+        for price in prices:
+            idx = min(int((price - min_price) / price_range_size), 4)
+            price_distribution[idx] += 1
+    else:
+        price_ranges = []
+        price_distribution = []
+
+    companies = db.session.query(Company.name).all()
+    companies = [c[0] for c in companies]
+    
+    company_stats = []
+    for company in Company.query.all():
+        pallets = company.pallets
+        if pallets:
+            avg_price = sum(p.price for p in pallets) / len(pallets)
+            avg_volume = sum(p.total_volume for p in pallets if p.total_volume) / len(pallets)
+            min_price = min(p.price for p in pallets)
+            max_price = max(p.price for p in pallets)
+        else:
+            avg_price = avg_volume = min_price = max_price = 0
+            
+        company_stats.append({
+            'name': company.name,
+            'pallet_count': len(pallets),
+            'avg_price': avg_price,
+            'avg_volume': avg_volume,
+            'min_price': min_price,
+            'max_price': max_price
+        })
+    
+    company_avg_prices = [stat['avg_price'] for stat in company_stats]
+    company_avg_volumes = [stat['avg_volume'] for stat in company_stats]
+
+    return render_template('dashboard.html',
+                         stats=stats,
+                         volume_ranges=volume_ranges,
+                         volume_distribution=volume_distribution,
+                         price_ranges=price_ranges,
+                         price_distribution=price_distribution,
+                         companies=companies,
+                         company_avg_prices=company_avg_prices,
+                         company_avg_volumes=company_avg_volumes,
+                         company_stats=company_stats)
 
 @app.route('/export/pallets/csv')
 def export_pallets_csv():
@@ -72,52 +157,85 @@ def export_pallets_csv():
 @app.route('/export/pallets/pdf')
 def export_pallets_pdf():
     buffer = io.BytesIO()
-    doc = SimpleDocTemplate(buffer, pagesize=letter)
+    doc = SimpleDocTemplate(buffer, pagesize=landscape(A4))
     styles = getSampleStyleSheet()
     elements = []
     
-    elements.append(Paragraph("Palet Yönetim Sistemi - Dışa Aktarım", styles['Title']))
+    styles.add(ParagraphStyle(
+        name='CellStyle',
+        parent=styles['Normal'],
+        fontSize=8,
+        leading=10,
+        spaceBefore=6,
+        spaceAfter=6
+    ))
+    
+    title_style = styles['Title']
+    title_style.fontSize = 16
+    elements.append(Paragraph("Palet Yönetim Sistemi - Detaylı Rapor", title_style))
     elements.append(Paragraph(f"Oluşturma Tarihi: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}", styles['Normal']))
     
-    data = [['ID', 'İsim', 'Firma', 'Fiyat (TL)', 'Desi Hesapları']]
+    headers = [
+        'ID', 'İsim', 'Firma', 'Fiyat (TL)', 'Tahta\nKalınlığı\n(cm)',
+        'Üst Tahta\nÖlçüleri\n(uzxgenxadet)', 'Alt Tahta\nÖlçüleri\n(uzxgenxadet)',
+        'Kapatma\nÖlçüleri\n(uzxgenxadet)', 'Takoz\nÖlçüleri\n(uzxgenxyük)',
+        'Desi Hesapları'
+    ]
+    
+    data = [headers]
     pallets = Pallet.query.all()
+    
     for pallet in pallets:
         volumes = calculate_component_volumes(pallet)
+        
+        upper_boards = f"{pallet.upper_board_length}x{pallet.upper_board_width}x{pallet.upper_board_quantity}"
+        lower_boards = f"{pallet.lower_board_length}x{pallet.lower_board_width}x{pallet.lower_board_quantity}"
+        closure_boards = f"{pallet.closure_length}x{pallet.closure_width}x{pallet.closure_quantity}"
+        blocks = f"{pallet.block_length}x{pallet.block_width}x{pallet.block_height}"
+        
         desi_details = (
             f"Üst Tahta: {volumes['upper_board_desi']}\n"
             f"Alt Tahta: {volumes['lower_board_desi']}\n"
             f"Kapatma: {volumes['closure_desi']}\n"
-            f"Takoz (9): {volumes['block_desi']}\n"
+            f"Takoz: {volumes['block_desi']}\n"
             f"Toplam: {volumes['total_desi']}"
         )
-        data.append([
-            str(pallet.id),
-            pallet.name,
-            pallet.company.name,
-            f"{pallet.price:.2f}",
-            desi_details
-        ])
+        
+        row = [
+            str(pallet.id), pallet.name, pallet.company.name,
+            f"{pallet.price:.2f}", f"{pallet.board_thickness:.1f}",
+            upper_boards, lower_boards, closure_boards, blocks, desi_details
+        ]
+        data.append(row)
     
-    table = Table(data)
+    col_widths = [
+        1.5*cm, 3*cm, 3*cm, 2*cm, 2*cm,
+        3.5*cm, 3.5*cm, 3.5*cm, 3*cm, 4*cm,
+    ]
+    
+    table = Table(data, colWidths=col_widths, repeatRows=1)
+    
     table.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#2196F3')),
         ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
         ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-        ('FONTSIZE', (0, 0), (-1, 0), 14),
-        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('FONTSIZE', (0, 0), (-1, 0), 10),
         ('BACKGROUND', (0, 1), (-1, -1), colors.white),
         ('TEXTCOLOR', (0, 1), (-1, -1), colors.black),
-        ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
-        ('FONTSIZE', (0, 1), (-1, -1), 12),
-        ('GRID', (0, 0), (-1, -1), 1, colors.black),
         ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+        ('FONTSIZE', (0, 1), (-1, -1), 8),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-        ('ALIGN', (4, 1), (4, -1), 'LEFT'),
-        ('TEXTCOLOR', (4, 1), (4, -1), colors.black),
+        ('ALIGN', (-1, 1), (-1, -1), 'LEFT'),
+        ('TOPPADDING', (0, 0), (-1, -1), 6),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+        ('LEFTPADDING', (0, 0), (-1, -1), 3),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 3),
     ]))
-    elements.append(table)
     
+    elements.append(table)
     doc.build(elements)
     buffer.seek(0)
     
@@ -193,7 +311,6 @@ def handle_pallets():
             price=data.get('price', 0)
         )
         
-        # Calculate and save volumes
         volumes = calculate_component_volumes(pallet)
         pallet.upper_board_desi = volumes['upper_board_desi']
         pallet.lower_board_desi = volumes['lower_board_desi']
@@ -260,7 +377,6 @@ def handle_pallet(pallet_id):
         for key, value in data.items():
             setattr(pallet, key, value)
         
-        # Calculate and save volumes
         volumes = calculate_component_volumes(pallet)
         pallet.upper_board_desi = volumes['upper_board_desi']
         pallet.lower_board_desi = volumes['lower_board_desi']
@@ -276,7 +392,6 @@ def handle_pallet(pallet_id):
         db.session.commit()
         return jsonify({'message': 'Palet başarıyla silindi'})
 
-# Route to update desi values for all existing pallets
 @app.route('/api/pallets/update-desi', methods=['POST'])
 def update_all_pallets_desi():
     pallets = Pallet.query.all()

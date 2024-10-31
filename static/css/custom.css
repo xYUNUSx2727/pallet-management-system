@@ -1,20 +1,20 @@
 /* General Styles */
 body {
     min-height: 100vh;
-    background: var(--bs-dark);
+    background: #1a1d24;
 }
 
 /* Card Styles */
 .card {
-    border: 1px solid var(--bs-secondary);
-    background: var(--bs-dark);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    border: 1px solid var(--bs-primary);
+    background: #2a2e35;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
     margin-bottom: 1.5rem;
 }
 
 .card-header {
-    background: var(--bs-dark);
-    border-bottom: 1px solid var(--bs-secondary);
+    background: #2a2e35;
+    border-bottom: 1px solid var(--bs-primary);
     padding: 1rem;
 }
 
@@ -29,10 +29,10 @@ body {
 
 /* Table Styles */
 .table-responsive {
-    background: var(--bs-dark);
+    background: #2a2e35;
     border-radius: 0.5rem;
     padding: 1.5rem;
-    border: 1px solid var(--bs-secondary);
+    border: 1px solid var(--bs-primary);
 }
 
 .table {
@@ -40,9 +40,9 @@ body {
 }
 
 .table th {
-    color: var(--bs-info);
+    color: #3498db;
     font-weight: 600;
-    border-bottom: 2px solid var(--bs-secondary);
+    border-bottom: 2px solid var(--bs-primary);
 }
 
 /* Form Styles */
@@ -51,45 +51,45 @@ body {
 }
 
 .form-label {
-    color: var(--bs-info);
+    color: #3498db;
     font-weight: 500;
     margin-bottom: 0.5rem;
 }
 
 .measurement-group {
-    background: var(--bs-dark);
+    background: #2a2e35;
     padding: 1.5rem;
     border-radius: 0.5rem;
     margin-bottom: 1.5rem;
-    border: 1px solid var(--bs-secondary);
+    border: 1px solid var(--bs-primary);
 }
 
 .measurement-group h4 {
-    color: var(--bs-info);
+    color: #3498db;
     margin-bottom: 1rem;
     font-size: 1.1rem;
 }
 
 /* Visualization */
 .pallet-visualization {
-    border: 1px solid var(--bs-secondary);
-    background: var(--bs-dark);
+    border: 1px solid var(--bs-primary);
+    background: #2a2e35;
     margin: 1rem 0;
     border-radius: 0.5rem;
 }
 
 /* Modal Styles */
 .modal-content {
-    background: var(--bs-dark);
-    border: 1px solid var(--bs-secondary);
+    background: #2a2e35;
+    border: 1px solid var(--bs-primary);
 }
 
 .modal-header {
-    border-bottom: 1px solid var(--bs-secondary);
+    border-bottom: 1px solid var(--bs-primary);
 }
 
 .modal-footer {
-    border-top: 1px solid var(--bs-secondary);
+    border-top: 1px solid var(--bs-primary);
 }
 
 /* Button Styles */
@@ -98,6 +98,49 @@ body {
     font-weight: 500;
 }
 
+.btn-primary {
+    background-color: #3498db;
+    border-color: #2980b9;
+}
+
+.btn-primary:hover {
+    background-color: #2980b9;
+    border-color: #2573a7;
+}
+
+.btn-secondary {
+    background-color: #2ecc71;
+    border-color: #27ae60;
+}
+
+.btn-secondary:hover {
+    background-color: #27ae60;
+    border-color: #219a52;
+}
+
+.btn-danger {
+    background-color: #e74c3c;
+    border-color: #c0392b;
+}
+
+.btn-danger:hover {
+    background-color: #c0392b;
+    border-color: #a93226;
+}
+
 .btn-group-sm > .btn, .btn-sm {
     padding: 0.25rem 0.75rem;
+}
+
+/* Navbar customization */
+.navbar {
+    background-color: #1a1d24 !important;
+    border-bottom: 1px solid var(--bs-primary) !important;
+}
+
+/* Chart customization */
+canvas {
+    background: #2a2e35;
+    border-radius: 0.5rem;
+    padding: 1rem;
 }
