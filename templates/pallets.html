@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Pallets</h1>
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#palletModal">
+        Add Pallet
+    </button>
+</div>
+
+<div class="table-responsive">
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Company</th>
+                <th>Volume (m³)</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody id="palletsList">
+            {% for pallet in pallets %}
+            <tr>
+                <td>{{ pallet.name }}</td>
+                <td>{{ pallet.company.name }}</td>
+                <td>{{ pallet.total_volume }}</td>
+                <td>
+                    <button class="btn btn-sm btn-info view-pallet" data-id="{{ pallet.id }}">View</button>
+                    <button class="btn btn-sm btn-secondary edit-pallet" data-id="{{ pallet.id }}">Edit</button>
+                    <button class="btn btn-sm btn-danger delete-pallet" data-id="{{ pallet.id }}">Delete</button>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Pallet Modal -->
+<div class="modal fade" id="palletModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add/Edit Pallet</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="palletForm">
+                    <input type="hidden" id="palletId">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Pallet Name</label>
+                            <input type="text" class="form-control" id="palletName" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Company</label>
+                            <select class="form-select" id="companySelect" required>
+                                {% for company in companies %}
+                                <option value="{{ company.id }}">{{ company.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="measurement-group">
+                        <h4>Top Board</h4>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <label class="form-label">Length (mm)</label>
+                                <input type="number" class="form-control" id="topLength" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Width (mm)</label>
+                                <input type="number" class="form-control" id="topWidth" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Height (mm)</label>
+                                <input type="number" class="form-control" id="topHeight" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="measurement-group">
+                        <h4>Bottom Closure</h4>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <label class="form-label">Length (mm)</label>
+                                <input type="number" class="form-control" id="bottomLength" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Width (mm)</label>
+                                <input type="number" class="form-control" id="bottomWidth" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Height (mm)</label>
+                                <input type="number" class="form-control" id="bottomHeight" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="measurement-group">
+                        <h4>Chassis</h4>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <label class="form-label">Length (mm)</label>
+                                <input type="number" class="form-control" id="chassisLength" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Width (mm)</label>
+                                <input type="number" class="form-control" id="chassisWidth" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Height (mm)</label>
+                                <input type="number" class="form-control" id="chassisHeight" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="measurement-group">
+                        <h4>Block (x9)</h4>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <label class="form-label">Length (mm)</label>
+                                <input type="number" class="form-control" id="blockLength" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Width (mm)</label>
+                                <input type="number" class="form-control" id="blockWidth" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Height (mm)</label>
+                                <input type="number" class="form-control" id="blockHeight" required>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" id="savePallet">Save</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/pallets.js') }}"></script>
+{% endblock %}

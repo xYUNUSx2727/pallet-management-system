@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>{{ pallet.name }}</h1>
+        <div>
+            <a href="{{ url_for('pallets') }}" class="btn btn-secondary">Back to Pallets</a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h3 class="card-title">General Information</h3>
+                </div>
+                <div class="card-body">
+                    <p><strong>Company:</strong> {{ pallet.company.name }}</p>
+                    <p><strong>Total Volume:</strong> {{ pallet.total_volume }} m³</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h3 class="card-title">Dimensions</h3>
+                </div>
+                <div class="card-body">
+                    <div class="measurement-group">
+                        <h4>Top Board</h4>
+                        <p>Length: {{ pallet.top_length }}mm</p>
+                        <p>Width: {{ pallet.top_width }}mm</p>
+                        <p>Height: {{ pallet.top_height }}mm</p>
+                    </div>
+
+                    <div class="measurement-group">
+                        <h4>Bottom Closure</h4>
+                        <p>Length: {{ pallet.bottom_length }}mm</p>
+                        <p>Width: {{ pallet.bottom_width }}mm</p>
+                        <p>Height: {{ pallet.bottom_height }}mm</p>
+                    </div>
+
+                    <div class="measurement-group">
+                        <h4>Chassis</h4>
+                        <p>Length: {{ pallet.chassis_length }}mm</p>
+                        <p>Width: {{ pallet.chassis_width }}mm</p>
+                        <p>Height: {{ pallet.chassis_height }}mm</p>
+                    </div>
+
+                    <div class="measurement-group">
+                        <h4>Block (x9)</h4>
+                        <p>Length: {{ pallet.block_length }}mm</p>
+                        <p>Width: {{ pallet.block_width }}mm</p>
+                        <p>Height: {{ pallet.block_height }}mm</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

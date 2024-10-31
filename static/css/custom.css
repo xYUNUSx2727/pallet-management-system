@@ -1,0 +1,27 @@
+.pallet-visualization {
+    border: 1px solid var(--bs-secondary);
+    background: var(--bs-dark);
+    margin: 1rem 0;
+}
+
+.table-responsive {
+    border-radius: 0.25rem;
+    background: var(--bs-dark);
+    padding: 1rem;
+}
+
+.form-group {
+    margin-bottom: 1rem;
+}
+
+.measurement-group {
+    background: var(--bs-dark);
+    padding: 1rem;
+    border-radius: 0.25rem;
+    margin-bottom: 1rem;
+}
+
+.measurement-group h4 {
+    color: var(--bs-info);
+    margin-bottom: 1rem;
+}
