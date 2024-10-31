@@ -192,8 +192,15 @@ def handle_pallets():
             block_height=data['block_height'],
             price=data.get('price', 0)
         )
+        
+        # Calculate and save volumes
         volumes = calculate_component_volumes(pallet)
+        pallet.upper_board_desi = volumes['upper_board_desi']
+        pallet.lower_board_desi = volumes['lower_board_desi']
+        pallet.closure_desi = volumes['closure_desi']
+        pallet.block_desi = volumes['block_desi']
         pallet.total_volume = volumes['total_desi']
+        
         db.session.add(pallet)
         db.session.commit()
         return jsonify({'message': 'Palet başarıyla oluşturuldu'}), 201
@@ -252,8 +259,15 @@ def handle_pallet(pallet_id):
         data = request.json
         for key, value in data.items():
             setattr(pallet, key, value)
+        
+        # Calculate and save volumes
         volumes = calculate_component_volumes(pallet)
+        pallet.upper_board_desi = volumes['upper_board_desi']
+        pallet.lower_board_desi = volumes['lower_board_desi']
+        pallet.closure_desi = volumes['closure_desi']
+        pallet.block_desi = volumes['block_desi']
         pallet.total_volume = volumes['total_desi']
+        
         db.session.commit()
         return jsonify({'message': 'Palet başarıyla güncellendi'})
     
@@ -261,3 +275,18 @@ def handle_pallet(pallet_id):
         db.session.delete(pallet)
         db.session.commit()
         return jsonify({'message': 'Palet başarıyla silindi'})
+
+# Route to update desi values for all existing pallets
+@app.route('/api/pallets/update-desi', methods=['POST'])
+def update_all_pallets_desi():
+    pallets = Pallet.query.all()
+    for pallet in pallets:
+        volumes = calculate_component_volumes(pallet)
+        pallet.upper_board_desi = volumes['upper_board_desi']
+        pallet.lower_board_desi = volumes['lower_board_desi']
+        pallet.closure_desi = volumes['closure_desi']
+        pallet.block_desi = volumes['block_desi']
+        pallet.total_volume = volumes['total_desi']
+    
+    db.session.commit()
+    return jsonify({'message': 'Tüm paletlerin desi değerleri güncellendi'})
