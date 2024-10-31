@@ -1,35 +1,38 @@
 def calculate_pallet_volume(pallet):
-    """Calculate total volume of pallet in cubic meters"""
-    # Calculate top board volume
-    top_board_volume = (
-        pallet.top_length * 
-        pallet.top_width * 
-        pallet.top_height
+    """Calculate total volume of pallet in desi (1 desi = 1000 cm³)"""
+    # Calculate upper boards volume
+    upper_board_volume = (
+        pallet.upper_board_length * 
+        pallet.upper_board_width * 
+        pallet.board_thickness * 
+        pallet.upper_board_quantity
     )
     
-    # Calculate bottom board volume
-    bottom_board_volume = (
-        pallet.bottom_length * 
-        pallet.bottom_width * 
-        pallet.bottom_height
+    # Calculate lower boards volume
+    lower_board_volume = (
+        pallet.lower_board_length * 
+        pallet.lower_board_width * 
+        pallet.board_thickness * 
+        pallet.lower_board_quantity
     )
     
-    # Calculate chassis volume
-    chassis_volume = (
-        pallet.chassis_length * 
-        pallet.chassis_width * 
-        pallet.chassis_height
+    # Calculate closure boards volume
+    closure_volume = (
+        pallet.closure_length * 
+        pallet.closure_width * 
+        pallet.board_thickness * 
+        pallet.closure_quantity
     )
     
-    # Calculate blocks volume (9 blocks)
+    # Calculate blocks volume
     block_volume = (
         pallet.block_length * 
         pallet.block_width * 
-        pallet.block_height * 9
+        pallet.block_height
     )
     
-    # Total volume in cubic millimeters
-    total_volume = top_board_volume + bottom_board_volume + chassis_volume + block_volume
+    # Total volume in cubic centimeters
+    total_volume_cm3 = upper_board_volume + lower_board_volume + closure_volume + block_volume
     
-    # Convert to cubic meters and round to 6 decimal places
-    return round(total_volume / 1000000000, 6)  # Convert from mm³ to m³
+    # Convert to desi (1 desi = 1000 cm³) and round to 2 decimal places
+    return round(total_volume_cm3 / 1000, 2)
