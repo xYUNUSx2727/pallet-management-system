@@ -20,6 +20,15 @@
                     <p><strong>Total Volume:</strong> {{ pallet.total_volume }} m³</p>
                 </div>
             </div>
+
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h3 class="card-title">Visualization</h3>
+                </div>
+                <div class="card-body">
+                    <canvas id="palletVisualization" width="400" height="300" class="pallet-visualization"></canvas>
+                </div>
+            </div>
         </div>
         
         <div class="col-md-6">
@@ -60,4 +69,62 @@
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const canvas = document.getElementById('palletVisualization');
+    const ctx = canvas.getContext('2d');
+    const pallet = {
+        top_length: {{ pallet.top_length }},
+        top_width: {{ pallet.top_width }},
+        top_height: {{ pallet.top_height }},
+        bottom_length: {{ pallet.bottom_length }},
+        bottom_width: {{ pallet.bottom_width }},
+        bottom_height: {{ pallet.bottom_height }},
+        chassis_length: {{ pallet.chassis_length }},
+        chassis_width: {{ pallet.chassis_width }},
+        chassis_height: {{ pallet.chassis_height }},
+        block_length: {{ pallet.block_length }},
+        block_width: {{ pallet.block_width }},
+        block_height: {{ pallet.block_height }}
+    };
+
+    // Scale factor to fit the pallet in canvas
+    const scale = Math.min(
+        canvas.width / Math.max(pallet.top_length, pallet.bottom_length),
+        canvas.height / (pallet.top_height + pallet.bottom_height + pallet.block_height)
+    ) * 0.8;
+
+    // Set origin to center-bottom of canvas
+    ctx.translate(canvas.width / 2, canvas.height - 20);
+    
+    // Draw function for rectangular shapes
+    function drawRect(x, y, width, height, color) {
+        ctx.fillStyle = color;
+        ctx.fillRect(x - width/2, -y - height, width, height);
+        ctx.strokeStyle = '#000';
+        ctx.strokeRect(x - width/2, -y - height, width, height);
+    }
+
+    // Draw bottom closure
+    drawRect(0, 0, pallet.bottom_length * scale, pallet.bottom_height * scale, '#666');
+
+    // Draw blocks (simplified as 3x3 grid)
+    const blockSpacingX = pallet.bottom_length * scale / 4;
+    const blockSpacingY = pallet.bottom_width * scale / 4;
+    const blockHeight = pallet.block_height * scale;
+    const blockSize = Math.min(pallet.block_length, pallet.block_width) * scale;
+
+    for(let i = -1; i <= 1; i++) {
+        for(let j = -1; j <= 1; j++) {
+            drawRect(i * blockSpacingX, pallet.bottom_height * scale, 
+                    blockSize, blockHeight, '#444');
+        }
+    }
+
+    // Draw top board
+    drawRect(0, (pallet.bottom_height + pallet.block_height) * scale,
+            pallet.top_length * scale, pallet.top_height * scale, '#888');
+});
+</script>
 {% endblock %}
