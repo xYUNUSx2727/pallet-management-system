@@ -24,8 +24,7 @@
             <tr>
                 <th>İsim</th>
                 <th>Firma</th>
-                <th>Mevcut Stok</th>
-                <th>Konum</th>
+                <th>Fiyat (TL)</th>
                 <th>Hacim (desi)</th>
                 <th>İşlemler</th>
             </tr>
@@ -35,12 +34,7 @@
             <tr>
                 <td>{{ pallet.name }}</td>
                 <td>{{ pallet.company.name }}</td>
-                <td>
-                    <span class="badge bg-{{ 'danger' if pallet.current_stock <= pallet.min_stock_level else 'success' }}">
-                        {{ pallet.current_stock }}
-                    </span>
-                </td>
-                <td>{{ pallet.location or 'Belirtilmemiş' }}</td>
+                <td>{{ "%.2f"|format(pallet.price) }}</td>
                 <td>{{ pallet.total_volume }}</td>
                 <td>
                     <button class="btn btn-sm btn-info view-pallet" data-id="{{ pallet.id }}">
@@ -71,11 +65,11 @@
                 <form id="palletForm">
                     <input type="hidden" id="palletId">
                     <div class="row mb-3">
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <label class="form-label">Palet Adı</label>
                             <input type="text" class="form-control" id="palletName" required>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <label class="form-label">Firma</label>
                             <select class="form-select" id="companySelect" required>
                                 {% for company in companies %}
@@ -83,27 +77,9 @@
                                 {% endfor %}
                             </select>
                         </div>
-                    </div>
-
-                    <div class="measurement-group">
-                        <h4>Envanter Ayarları</h4>
-                        <div class="row">
-                            <div class="col-md-3">
-                                <label class="form-label">Başlangıç Stoku</label>
-                                <input type="number" class="form-control" id="currentStock" value="0" min="0">
-                            </div>
-                            <div class="col-md-3">
-                                <label class="form-label">Min Stok Seviyesi</label>
-                                <input type="number" class="form-control" id="minStockLevel" value="0" min="0">
-                            </div>
-                            <div class="col-md-3">
-                                <label class="form-label">Max Stok Seviyesi</label>
-                                <input type="number" class="form-control" id="maxStockLevel" value="0" min="0">
-                            </div>
-                            <div class="col-md-3">
-                                <label class="form-label">Konum</label>
-                                <input type="text" class="form-control" id="location" placeholder="örn: Depo A">
-                            </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Fiyat (TL)</label>
+                            <input type="number" step="0.01" class="form-control" id="price" required>
                         </div>
                     </div>
 
@@ -111,8 +87,8 @@
                         <h4>Tahta Kalınlığı</h4>
                         <div class="row">
                             <div class="col-md-12">
-                                <label class="form-label">Kalınlık (mm)</label>
-                                <input type="number" class="form-control" id="boardThickness" required>
+                                <label class="form-label">Kalınlık (cm)</label>
+                                <input type="number" step="0.1" class="form-control" id="boardThickness" required>
                             </div>
                         </div>
                     </div>
@@ -120,72 +96,84 @@
                     <div class="measurement-group">
                         <h4>Üst Tahtalar</h4>
                         <div class="row">
-                            <div class="col-md-3">
-                                <label class="form-label">Uzunluk (mm)</label>
-                                <input type="number" class="form-control" id="upperBoardLength" required>
+                            <div class="col-md-4">
+                                <label class="form-label">Uzunluk (cm)</label>
+                                <input type="number" step="0.1" class="form-control" id="upperBoardLength" required>
                             </div>
-                            <div class="col-md-3">
-                                <label class="form-label">Genişlik (mm)</label>
-                                <input type="number" class="form-control" id="upperBoardWidth" required>
+                            <div class="col-md-4">
+                                <label class="form-label">Genişlik (cm)</label>
+                                <input type="number" step="0.1" class="form-control" id="upperBoardWidth" required>
                             </div>
-                            <div class="col-md-3">
+                            <div class="col-md-4">
                                 <label class="form-label">Adet</label>
                                 <input type="number" class="form-control" id="upperBoardQuantity" required>
                             </div>
+                        </div>
+                        <div class="mt-2">
+                            <small class="text-muted">Üst Tahta Desi: <span id="upperBoardDesi">0</span></small>
                         </div>
                     </div>
 
                     <div class="measurement-group">
                         <h4>Alt Tahtalar</h4>
                         <div class="row">
-                            <div class="col-md-3">
-                                <label class="form-label">Uzunluk (mm)</label>
-                                <input type="number" class="form-control" id="lowerBoardLength" required>
+                            <div class="col-md-4">
+                                <label class="form-label">Uzunluk (cm)</label>
+                                <input type="number" step="0.1" class="form-control" id="lowerBoardLength" required>
                             </div>
-                            <div class="col-md-3">
-                                <label class="form-label">Genişlik (mm)</label>
-                                <input type="number" class="form-control" id="lowerBoardWidth" required>
+                            <div class="col-md-4">
+                                <label class="form-label">Genişlik (cm)</label>
+                                <input type="number" step="0.1" class="form-control" id="lowerBoardWidth" required>
                             </div>
-                            <div class="col-md-3">
+                            <div class="col-md-4">
                                 <label class="form-label">Adet</label>
                                 <input type="number" class="form-control" id="lowerBoardQuantity" required>
                             </div>
+                        </div>
+                        <div class="mt-2">
+                            <small class="text-muted">Alt Tahta Desi: <span id="lowerBoardDesi">0</span></small>
                         </div>
                     </div>
 
                     <div class="measurement-group">
                         <h4>Kapatma Tahtaları</h4>
                         <div class="row">
-                            <div class="col-md-3">
-                                <label class="form-label">Uzunluk (mm)</label>
-                                <input type="number" class="form-control" id="closureLength" required>
+                            <div class="col-md-4">
+                                <label class="form-label">Uzunluk (cm)</label>
+                                <input type="number" step="0.1" class="form-control" id="closureLength" required>
                             </div>
-                            <div class="col-md-3">
-                                <label class="form-label">Genişlik (mm)</label>
-                                <input type="number" class="form-control" id="closureWidth" required>
+                            <div class="col-md-4">
+                                <label class="form-label">Genişlik (cm)</label>
+                                <input type="number" step="0.1" class="form-control" id="closureWidth" required>
                             </div>
-                            <div class="col-md-3">
+                            <div class="col-md-4">
                                 <label class="form-label">Adet</label>
                                 <input type="number" class="form-control" id="closureQuantity" required>
                             </div>
                         </div>
+                        <div class="mt-2">
+                            <small class="text-muted">Kapatma Desi: <span id="closureDesi">0</span></small>
+                        </div>
                     </div>
 
                     <div class="measurement-group">
-                        <h4>Takoz</h4>
+                        <h4>Takoz (9 adet)</h4>
                         <div class="row">
                             <div class="col-md-4">
-                                <label class="form-label">Uzunluk (mm)</label>
-                                <input type="number" class="form-control" id="blockLength" required>
+                                <label class="form-label">Uzunluk (cm)</label>
+                                <input type="number" step="0.1" class="form-control" id="blockLength" required>
                             </div>
                             <div class="col-md-4">
-                                <label class="form-label">Genişlik (mm)</label>
-                                <input type="number" class="form-control" id="blockWidth" required>
+                                <label class="form-label">Genişlik (cm)</label>
+                                <input type="number" step="0.1" class="form-control" id="blockWidth" required>
                             </div>
                             <div class="col-md-4">
-                                <label class="form-label">Yükseklik (mm)</label>
-                                <input type="number" class="form-control" id="blockHeight" required>
+                                <label class="form-label">Yükseklik (cm)</label>
+                                <input type="number" step="0.1" class="form-control" id="blockHeight" required>
                             </div>
+                        </div>
+                        <div class="mt-2">
+                            <small class="text-muted">Takoz Desi: <span id="blockDesi">0</span></small>
                         </div>
                     </div>
                 </form>

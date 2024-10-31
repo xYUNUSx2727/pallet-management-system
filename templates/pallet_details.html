@@ -5,7 +5,7 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1>{{ pallet.name }}</h1>
         <div>
-            <a href="{{ url_for('pallets') }}" class="btn btn-secondary">Back to Pallets</a>
+            <a href="{{ url_for('pallets') }}" class="btn btn-secondary">Paletlere Dön</a>
         </div>
     </div>
 
@@ -13,79 +13,25 @@
         <div class="col-md-6">
             <div class="card mb-4">
                 <div class="card-header">
-                    <h3 class="card-title">General Information</h3>
+                    <h3 class="card-title">Genel Bilgiler</h3>
                 </div>
                 <div class="card-body">
-                    <p><strong>Company:</strong> {{ pallet.company.name }}</p>
-                    <p><strong>Total Volume:</strong> {{ pallet.total_volume }} m³</p>
-                </div>
-            </div>
-
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h3 class="card-title">Inventory Management</h3>
-                </div>
-                <div class="card-body">
-                    <div class="row mb-3">
-                        <div class="col">
-                            <h5>Current Stock: <span id="currentStock">{{ pallet.current_stock }}</span></h5>
-                        </div>
-                    </div>
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <p><strong>Min Stock Level:</strong> {{ pallet.min_stock_level }}</p>
-                        </div>
-                        <div class="col-md-6">
-                            <p><strong>Max Stock Level:</strong> {{ pallet.max_stock_level }}</p>
-                        </div>
-                    </div>
-                    <div class="row mb-3">
-                        <div class="col">
-                            <p><strong>Location:</strong> {{ pallet.location or 'Not specified' }}</p>
-                        </div>
-                    </div>
-                    
-                    <form id="inventoryForm" class="mb-3">
-                        <div class="row g-3">
-                            <div class="col-md-6">
-                                <select class="form-select" id="transactionType" required>
-                                    <option value="">Select Transaction Type</option>
-                                    <option value="IN">Stock In</option>
-                                    <option value="OUT">Stock Out</option>
-                                </select>
-                            </div>
-                            <div class="col-md-6">
-                                <input type="number" class="form-control" id="quantity" placeholder="Quantity" required min="1">
-                            </div>
-                            <div class="col-12">
-                                <textarea class="form-control" id="notes" rows="2" placeholder="Transaction Notes"></textarea>
-                            </div>
-                            <div class="col-12">
-                                <button type="submit" class="btn btn-primary">Update Inventory</button>
-                            </div>
-                        </div>
-                    </form>
-
-                    <h5>Transaction History</h5>
-                    <div class="table-responsive">
-                        <table class="table" id="transactionTable">
-                            <thead>
-                                <tr>
-                                    <th>Date</th>
-                                    <th>Type</th>
-                                    <th>Quantity</th>
-                                    <th>Notes</th>
-                                </tr>
-                            </thead>
-                            <tbody></tbody>
-                        </table>
+                    <p><strong>Firma:</strong> {{ pallet.company.name }}</p>
+                    <p><strong>Fiyat:</strong> {{ "%.2f"|format(pallet.price) }} TL</p>
+                    <p><strong>Toplam Hacim:</strong> {{ pallet.total_volume }} desi</p>
+                    <div class="mt-3">
+                        <h5>Bileşen Hacimleri:</h5>
+                        <p><strong>Üst Tahta:</strong> {{ pallet.upper_board_desi }} desi</p>
+                        <p><strong>Alt Tahta:</strong> {{ pallet.lower_board_desi }} desi</p>
+                        <p><strong>Kapatma:</strong> {{ pallet.closure_desi }} desi</p>
+                        <p><strong>Takoz (9 adet):</strong> {{ pallet.block_desi }} desi</p>
                     </div>
                 </div>
             </div>
 
             <div class="card mb-4">
                 <div class="card-header">
-                    <h3 class="card-title">Visualization</h3>
+                    <h3 class="card-title">Görselleştirme</h3>
                 </div>
                 <div class="card-body">
                     <canvas id="palletVisualization" width="400" height="300" class="pallet-visualization"></canvas>
@@ -96,35 +42,40 @@
         <div class="col-md-6">
             <div class="card mb-4">
                 <div class="card-header">
-                    <h3 class="card-title">Dimensions</h3>
+                    <h3 class="card-title">Ölçüler</h3>
                 </div>
                 <div class="card-body">
                     <div class="measurement-group">
-                        <h4>Top Board</h4>
-                        <p>Length: {{ pallet.top_length }}mm</p>
-                        <p>Width: {{ pallet.top_width }}mm</p>
-                        <p>Height: {{ pallet.top_height }}mm</p>
+                        <h4>Tahta Kalınlığı</h4>
+                        <p>{{ pallet.board_thickness }} cm</p>
                     </div>
 
                     <div class="measurement-group">
-                        <h4>Bottom Board</h4>
-                        <p>Length: {{ pallet.bottom_length }}mm</p>
-                        <p>Width: {{ pallet.bottom_width }}mm</p>
-                        <p>Height: {{ pallet.bottom_height }}mm</p>
+                        <h4>Üst Tahtalar</h4>
+                        <p>Uzunluk: {{ pallet.upper_board_length }} cm</p>
+                        <p>Genişlik: {{ pallet.upper_board_width }} cm</p>
+                        <p>Adet: {{ pallet.upper_board_quantity }}</p>
                     </div>
 
                     <div class="measurement-group">
-                        <h4>Chassis</h4>
-                        <p>Length: {{ pallet.chassis_length }}mm</p>
-                        <p>Width: {{ pallet.chassis_width }}mm</p>
-                        <p>Height: {{ pallet.chassis_height }}mm</p>
+                        <h4>Alt Tahtalar</h4>
+                        <p>Uzunluk: {{ pallet.lower_board_length }} cm</p>
+                        <p>Genişlik: {{ pallet.lower_board_width }} cm</p>
+                        <p>Adet: {{ pallet.lower_board_quantity }}</p>
                     </div>
 
                     <div class="measurement-group">
-                        <h4>Block (x9)</h4>
-                        <p>Length: {{ pallet.block_length }}mm</p>
-                        <p>Width: {{ pallet.block_width }}mm</p>
-                        <p>Height: {{ pallet.block_height }}mm</p>
+                        <h4>Kapatma Tahtaları</h4>
+                        <p>Uzunluk: {{ pallet.closure_length }} cm</p>
+                        <p>Genişlik: {{ pallet.closure_width }} cm</p>
+                        <p>Adet: {{ pallet.closure_quantity }}</p>
+                    </div>
+
+                    <div class="measurement-group">
+                        <h4>Takoz (9 adet)</h4>
+                        <p>Uzunluk: {{ pallet.block_length }} cm</p>
+                        <p>Genişlik: {{ pallet.block_width }} cm</p>
+                        <p>Yükseklik: {{ pallet.block_height }} cm</p>
                     </div>
                 </div>
             </div>
@@ -134,27 +85,11 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Visualization code (unchanged)
     const canvas = document.getElementById('palletVisualization');
     const ctx = canvas.getContext('2d');
-    const pallet = {
-        top_length: {{ pallet.top_length }},
-        top_width: {{ pallet.top_width }},
-        top_height: {{ pallet.top_height }},
-        bottom_length: {{ pallet.bottom_length }},
-        bottom_width: {{ pallet.bottom_width }},
-        bottom_height: {{ pallet.bottom_height }},
-        chassis_length: {{ pallet.chassis_length }},
-        chassis_width: {{ pallet.chassis_width }},
-        chassis_height: {{ pallet.chassis_height }},
-        block_length: {{ pallet.block_length }},
-        block_width: {{ pallet.block_width }},
-        block_height: {{ pallet.block_height }}
-    };
-
     const scale = Math.min(
-        canvas.width / Math.max(pallet.top_length, pallet.bottom_length),
-        canvas.height / (pallet.top_height + pallet.bottom_height + pallet.block_height)
+        canvas.width / {{ pallet.upper_board_length }},
+        canvas.height / ({{ pallet.board_thickness + pallet.block_height }})
     ) * 0.8;
 
     ctx.translate(canvas.width / 2, canvas.height - 20);
@@ -166,82 +101,24 @@ document.addEventListener('DOMContentLoaded', function() {
         ctx.strokeRect(x - width/2, -y - height, width, height);
     }
 
-    drawRect(0, 0, pallet.bottom_length * scale, pallet.bottom_height * scale, '#666');
+    // Draw bottom boards
+    drawRect(0, 0, {{ pallet.lower_board_length }} * scale, {{ pallet.board_thickness }} * scale, '#666');
 
-    const blockSpacingX = pallet.bottom_length * scale / 4;
-    const blockSpacingY = pallet.bottom_width * scale / 4;
-    const blockHeight = pallet.block_height * scale;
-    const blockSize = Math.min(pallet.block_length, pallet.block_width) * scale;
+    // Draw blocks
+    const blockSpacingX = {{ pallet.lower_board_length }} * scale / 4;
+    const blockSize = Math.min({{ pallet.block_length }}, {{ pallet.block_width }}) * scale;
+    const blockHeight = {{ pallet.block_height }} * scale;
 
     for(let i = -1; i <= 1; i++) {
         for(let j = -1; j <= 1; j++) {
-            drawRect(i * blockSpacingX, pallet.bottom_height * scale, 
+            drawRect(i * blockSpacingX, {{ pallet.board_thickness }} * scale, 
                     blockSize, blockHeight, '#444');
         }
     }
 
-    drawRect(0, (pallet.bottom_height + pallet.block_height) * scale,
-            pallet.top_length * scale, pallet.top_height * scale, '#888');
-
-    // Inventory Management
-    const inventoryForm = document.getElementById('inventoryForm');
-    const transactionTable = document.getElementById('transactionTable').getElementsByTagName('tbody')[0];
-
-    // Load transaction history
-    async function loadTransactionHistory() {
-        const response = await fetch(`/api/inventory/{{ pallet.id }}/history`);
-        const transactions = await response.json();
-        
-        transactionTable.innerHTML = '';
-        transactions.forEach(transaction => {
-            const row = transactionTable.insertRow();
-            row.innerHTML = `
-                <td>${transaction.date}</td>
-                <td>${transaction.type}</td>
-                <td>${transaction.quantity}</td>
-                <td>${transaction.notes}</td>
-            `;
-        });
-    }
-
-    // Handle inventory updates
-    inventoryForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        
-        const type = document.getElementById('transactionType').value;
-        const quantity = parseInt(document.getElementById('quantity').value);
-        const notes = document.getElementById('notes').value;
-
-        try {
-            const response = await fetch(`/api/inventory/{{ pallet.id }}`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ type, quantity, notes })
-            });
-
-            if (!response.ok) {
-                const error = await response.json();
-                throw new Error(error.error || 'Failed to update inventory');
-            }
-
-            const result = await response.json();
-            document.getElementById('currentStock').textContent = result.current_stock;
-            
-            // Reset form
-            inventoryForm.reset();
-            
-            // Reload transaction history
-            await loadTransactionHistory();
-
-        } catch (error) {
-            alert(error.message);
-        }
-    });
-
-    // Initial load of transaction history
-    loadTransactionHistory();
+    // Draw top boards
+    drawRect(0, ({{ pallet.board_thickness + pallet.block_height }}) * scale,
+            {{ pallet.upper_board_length }} * scale, {{ pallet.board_thickness }} * scale, '#888');
 });
 </script>
 {% endblock %}

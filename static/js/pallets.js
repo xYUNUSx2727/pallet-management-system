@@ -9,6 +9,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const palletData = {
             name: document.getElementById('palletName').value,
             company_id: document.getElementById('companySelect').value,
+            price: parseFloat(document.getElementById('price').value),
             board_thickness: parseFloat(document.getElementById('boardThickness').value),
             upper_board_length: parseFloat(document.getElementById('upperBoardLength').value),
             upper_board_width: parseFloat(document.getElementById('upperBoardWidth').value),
@@ -56,6 +57,7 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('palletId').value = pallet.id;
             document.getElementById('palletName').value = pallet.name;
             document.getElementById('companySelect').value = pallet.company_id;
+            document.getElementById('price').value = pallet.price;
             
             document.getElementById('boardThickness').value = pallet.board_thickness;
             document.getElementById('upperBoardLength').value = pallet.upper_board_length;
@@ -71,6 +73,9 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('blockWidth').value = pallet.block_width;
             document.getElementById('blockHeight').value = pallet.block_height;
 
+            // Update desi calculations
+            updateDesiCalculations();
+
             palletModal.show();
         });
     });
@@ -78,7 +83,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Delete Pallet
     document.querySelectorAll('.delete-pallet').forEach(button => {
         button.addEventListener('click', async (e) => {
-            if (confirm('Are you sure you want to delete this pallet?')) {
+            if (confirm('Bu paleti silmek istediğinizden emin misiniz?')) {
                 const palletId = e.target.dataset.id;
                 
                 try {
@@ -104,5 +109,54 @@ document.addEventListener('DOMContentLoaded', function() {
             const palletId = e.target.dataset.id;
             window.location.href = `/pallets/${palletId}`;
         });
+    });
+
+    // Calculate desi values
+    function calculateDesi(length, width, height, quantity = 1) {
+        return ((length * width * height * quantity) / 1000).toFixed(2);
+    }
+
+    function updateDesiCalculations() {
+        const thickness = parseFloat(document.getElementById('boardThickness').value) || 0;
+
+        // Upper boards
+        const upperLength = parseFloat(document.getElementById('upperBoardLength').value) || 0;
+        const upperWidth = parseFloat(document.getElementById('upperBoardWidth').value) || 0;
+        const upperQuantity = parseInt(document.getElementById('upperBoardQuantity').value) || 0;
+        document.getElementById('upperBoardDesi').textContent = 
+            calculateDesi(upperLength, upperWidth, thickness, upperQuantity);
+
+        // Lower boards
+        const lowerLength = parseFloat(document.getElementById('lowerBoardLength').value) || 0;
+        const lowerWidth = parseFloat(document.getElementById('lowerBoardWidth').value) || 0;
+        const lowerQuantity = parseInt(document.getElementById('lowerBoardQuantity').value) || 0;
+        document.getElementById('lowerBoardDesi').textContent = 
+            calculateDesi(lowerLength, lowerWidth, thickness, lowerQuantity);
+
+        // Closure boards
+        const closureLength = parseFloat(document.getElementById('closureLength').value) || 0;
+        const closureWidth = parseFloat(document.getElementById('closureWidth').value) || 0;
+        const closureQuantity = parseInt(document.getElementById('closureQuantity').value) || 0;
+        document.getElementById('closureDesi').textContent = 
+            calculateDesi(closureLength, closureWidth, thickness, closureQuantity);
+
+        // Blocks (fixed 9 quantity)
+        const blockLength = parseFloat(document.getElementById('blockLength').value) || 0;
+        const blockWidth = parseFloat(document.getElementById('blockWidth').value) || 0;
+        const blockHeight = parseFloat(document.getElementById('blockHeight').value) || 0;
+        document.getElementById('blockDesi').textContent = 
+            calculateDesi(blockLength, blockWidth, blockHeight, 9);
+    }
+
+    // Add event listeners for real-time desi calculations
+    const dimensionInputs = [
+        'boardThickness', 'upperBoardLength', 'upperBoardWidth', 'upperBoardQuantity',
+        'lowerBoardLength', 'lowerBoardWidth', 'lowerBoardQuantity',
+        'closureLength', 'closureWidth', 'closureQuantity',
+        'blockLength', 'blockWidth', 'blockHeight'
+    ];
+
+    dimensionInputs.forEach(inputId => {
+        document.getElementById(inputId).addEventListener('input', updateDesiCalculations);
     });
 });
