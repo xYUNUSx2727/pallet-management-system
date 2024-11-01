@@ -74,189 +74,96 @@
     </div>
 </div>
 
-<!-- Desktop View -->
-<div class="table-responsive d-none d-md-block">
-    <table class="table">
-        <thead>
-            <tr>
-                <th>İsim</th>
-                <th>Firma</th>
-                <th>Fiyat (TL)</th>
-                <th>Hacim (desi)</th>
-                <th>Desi Başına Fiyat (TL)</th>
-                <th>Ölçüler</th>
-                <th>İşlemler</th>
-            </tr>
-        </thead>
-        <tbody id="palletsList">
-            {% for pallet in pallets %}
-            {% set price_per_desi = (pallet.price / pallet.total_volume) if pallet.total_volume > 0 else 0 %}
-            <tr data-company-id="{{ pallet.company_id }}" data-price="{{ pallet.price }}" data-volume="{{ pallet.total_volume }}" data-price-per-desi="{{ price_per_desi }}">
-                <td>{{ pallet.name }}</td>
-                <td>{{ pallet.company.name }}</td>
-                <td>{{ "%.2f"|format(pallet.price) }}</td>
-                <td>{{ "%.2f"|format(pallet.total_volume) }}</td>
-                <td>{{ "%.2f"|format(price_per_desi) }}</td>
-                <td class="pallet-dimensions">
-                    <div class="dimensions-group mb-2">
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <strong class="dimension-label">Üst Tahta</strong>
-                            <small class="text-muted">{{ pallet.upper_board_quantity }} adet</small>
-                        </div>
-                        <div class="measurements">
-                            <span>Uzunluk: {{ pallet.upper_board_length }} cm</span>
-                            <span>Genişlik: {{ pallet.upper_board_width }} cm</span>
-                            <span>Kalınlık: {{ pallet.board_thickness }} cm</span>
-                        </div>
-                    </div>
-
-                    <div class="dimensions-group mb-2">
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <strong class="dimension-label">Alt Tahta</strong>
-                            <small class="text-muted">{{ pallet.lower_board_quantity }} adet</small>
-                        </div>
-                        <div class="measurements">
-                            <span>Uzunluk: {{ pallet.lower_board_length }} cm</span>
-                            <span>Genişlik: {{ pallet.lower_board_width }} cm</span>
-                            <span>Kalınlık: {{ pallet.board_thickness }} cm</span>
-                        </div>
-                    </div>
-
-                    <div class="dimensions-group mb-2">
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <strong class="dimension-label">Kapatma</strong>
-                            <small class="text-muted">{{ pallet.closure_quantity }} adet</small>
-                        </div>
-                        <div class="measurements">
-                            <span>Uzunluk: {{ pallet.closure_length }} cm</span>
-                            <span>Genişlik: {{ pallet.closure_width }} cm</span>
-                            <span>Kalınlık: {{ pallet.board_thickness }} cm</span>
-                        </div>
-                    </div>
-
-                    <div class="dimensions-group">
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <strong class="dimension-label">Takoz</strong>
-                            <small class="text-muted">9 adet</small>
-                        </div>
-                        <div class="measurements">
-                            <span>Uzunluk: {{ pallet.block_length }} cm</span>
-                            <span>Genişlik: {{ pallet.block_width }} cm</span>
-                            <span>Yükseklik: {{ pallet.block_height }} cm</span>
-                        </div>
-                    </div>
-                </td>
-                <td>
-                    <div class="btn-group-vertical">
-                        <a href="{{ url_for('pallet_details', pallet_id=pallet.id) }}" class="btn btn-info mb-2">
-                            <i class="fas fa-eye me-2"></i>Görüntüle
-                        </a>
-                        <button class="btn btn-secondary edit-pallet mb-2" data-id="{{ pallet.id }}">
-                            <i class="fas fa-edit me-2"></i>Düzenle
-                        </button>
-                        <button class="btn btn-danger delete-pallet" data-id="{{ pallet.id }}">
-                            <i class="fas fa-trash me-2"></i>Sil
-                        </button>
-                    </div>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</div>
-
-<!-- Mobile View -->
-<div class="accordion d-md-none" id="palletsAccordion">
+<!-- Pallet List -->
+<div class="pallet-list" id="palletsList">
     {% for pallet in pallets %}
     {% set price_per_desi = (pallet.price / pallet.total_volume) if pallet.total_volume > 0 else 0 %}
-    <div class="accordion-item" data-company-id="{{ pallet.company_id }}" data-price="{{ pallet.price }}" data-volume="{{ pallet.total_volume }}" data-price-per-desi="{{ price_per_desi }}">
-        <h2 class="accordion-header">
-            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#pallet{{ pallet.id }}">
-                <div class="d-flex justify-content-between w-100 align-items-center">
-                    <span>{{ pallet.name }}</span>
-                    <div class="text-end">
-                        <div class="badge bg-primary">{{ "%.2f"|format(pallet.price) }} TL</div>
-                        <div class="badge bg-info">{{ "%.2f"|format(price_per_desi) }} TL/desi</div>
-                    </div>
+    <div class="pallet-item card mb-3" data-company-id="{{ pallet.company_id }}" 
+         data-price="{{ pallet.price }}" data-volume="{{ pallet.total_volume }}" 
+         data-price-per-desi="{{ price_per_desi }}">
+        <div class="card-header pallet-header" data-bs-toggle="modal" 
+             data-bs-target="#actionModal-{{ pallet.id }}" role="button">
+            <div class="d-flex justify-content-between align-items-center">
+                <h3 class="card-title mb-0">{{ pallet.name }}</h3>
+                <div class="pallet-meta">
+                    <span class="badge bg-primary me-2">{{ "%.2f"|format(pallet.price) }} TL</span>
+                    <span class="badge bg-info">{{ "%.2f"|format(price_per_desi) }} TL/desi</span>
                 </div>
-            </button>
-        </h2>
-        <div id="pallet{{ pallet.id }}" class="accordion-collapse collapse">
-            <div class="accordion-body">
-                <div class="pallet-info">
-                    <div class="info-group">
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="info-group mb-3">
                         <label>Firma:</label>
                         <span>{{ pallet.company.name }}</span>
                     </div>
-                    <div class="info-group">
-                        <label>Hacim:</label>
+                    <div class="info-group mb-3">
+                        <label>Toplam Hacim:</label>
                         <span>{{ "%.2f"|format(pallet.total_volume) }} desi</span>
                     </div>
-                    <div class="info-group">
-                        <label>Desi Başına Fiyat:</label>
-                        <span>{{ "%.2f"|format(price_per_desi) }} TL</span>
-                    </div>
                 </div>
-
-                <div class="dimensions-section">
-                    <div class="dimensions-group mb-2">
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <strong class="dimension-label">Üst Tahta</strong>
-                            <small class="text-muted">{{ pallet.upper_board_quantity }} adet</small>
+                <div class="col-md-6">
+                    <div class="dimensions-section">
+                        <div class="dimensions-group">
+                            <div class="d-flex justify-content-between">
+                                <strong>Üst Tahta ({{ pallet.upper_board_quantity }} adet)</strong>
+                                <small>{{ "%.2f"|format(pallet.upper_board_desi) }} desi</small>
+                            </div>
+                            <div class="measurements">
+                                <span>{{ pallet.upper_board_length }}x{{ pallet.upper_board_width }}x{{ pallet.board_thickness }} cm</span>
+                            </div>
                         </div>
-                        <div class="measurements">
-                            <span>Uzunluk: {{ pallet.upper_board_length }} cm</span>
-                            <span>Genişlik: {{ pallet.upper_board_width }} cm</span>
-                            <span>Kalınlık: {{ pallet.board_thickness }} cm</span>
+                        <div class="dimensions-group">
+                            <div class="d-flex justify-content-between">
+                                <strong>Alt Tahta ({{ pallet.lower_board_quantity }} adet)</strong>
+                                <small>{{ "%.2f"|format(pallet.lower_board_desi) }} desi</small>
+                            </div>
+                            <div class="measurements">
+                                <span>{{ pallet.lower_board_length }}x{{ pallet.lower_board_width }}x{{ pallet.board_thickness }} cm</span>
+                            </div>
                         </div>
-                    </div>
-
-                    <div class="dimensions-group mb-2">
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <strong class="dimension-label">Alt Tahta</strong>
-                            <small class="text-muted">{{ pallet.lower_board_quantity }} adet</small>
+                        <div class="dimensions-group">
+                            <div class="d-flex justify-content-between">
+                                <strong>Kapatma ({{ pallet.closure_quantity }} adet)</strong>
+                                <small>{{ "%.2f"|format(pallet.closure_desi) }} desi</small>
+                            </div>
+                            <div class="measurements">
+                                <span>{{ pallet.closure_length }}x{{ pallet.closure_width }}x{{ pallet.board_thickness }} cm</span>
+                            </div>
                         </div>
-                        <div class="measurements">
-                            <span>Uzunluk: {{ pallet.lower_board_length }} cm</span>
-                            <span>Genişlik: {{ pallet.lower_board_width }} cm</span>
-                            <span>Kalınlık: {{ pallet.board_thickness }} cm</span>
-                        </div>
-                    </div>
-
-                    <div class="dimensions-group mb-2">
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <strong class="dimension-label">Kapatma</strong>
-                            <small class="text-muted">{{ pallet.closure_quantity }} adet</small>
-                        </div>
-                        <div class="measurements">
-                            <span>Uzunluk: {{ pallet.closure_length }} cm</span>
-                            <span>Genişlik: {{ pallet.closure_width }} cm</span>
-                            <span>Kalınlık: {{ pallet.board_thickness }} cm</span>
-                        </div>
-                    </div>
-
-                    <div class="dimensions-group">
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <strong class="dimension-label">Takoz</strong>
-                            <small class="text-muted">9 adet</small>
-                        </div>
-                        <div class="measurements">
-                            <span>Uzunluk: {{ pallet.block_length }} cm</span>
-                            <span>Genişlik: {{ pallet.block_width }} cm</span>
-                            <span>Yükseklik: {{ pallet.block_height }} cm</span>
+                        <div class="dimensions-group">
+                            <div class="d-flex justify-content-between">
+                                <strong>Takoz (9 adet)</strong>
+                                <small>{{ "%.2f"|format(pallet.block_desi) }} desi</small>
+                            </div>
+                            <div class="measurements">
+                                <span>{{ pallet.block_length }}x{{ pallet.block_width }}x{{ pallet.block_height }} cm</span>
+                            </div>
                         </div>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
 
-                <div class="actions mt-3">
-                    <div class="btn-group-vertical">
-                        <a href="{{ url_for('pallet_details', pallet_id=pallet.id) }}" class="btn btn-info mb-2">
-                            <i class="fas fa-eye me-2"></i>Görüntüle
+    <!-- Action Modal for each pallet -->
+    <div class="modal fade" id="actionModal-{{ pallet.id }}" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">{{ pallet.name }} - İşlemler</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('pallet_details', pallet_id=pallet.id) }}" class="btn btn-info">
+                            <i class="fas fa-eye me-2"></i>Detayları Görüntüle
                         </a>
-                        <button class="btn btn-secondary edit-pallet mb-2" data-id="{{ pallet.id }}">
+                        <button class="btn btn-secondary edit-pallet" data-id="{{ pallet.id }}" data-bs-dismiss="modal">
                             <i class="fas fa-edit me-2"></i>Düzenle
                         </button>
-                        <button class="btn btn-danger delete-pallet" data-id="{{ pallet.id }}">
+                        <button class="btn btn-danger delete-pallet" data-id="{{ pallet.id }}" data-bs-dismiss="modal">
                             <i class="fas fa-trash me-2"></i>Sil
                         </button>
                     </div>

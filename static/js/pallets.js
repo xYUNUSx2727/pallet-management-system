@@ -3,13 +3,17 @@ let filterElements;
 
 // Define the filtering and sorting function
 const filterAndSortPallets = function() {
+    // Only proceed if we're on the pallets page
+    const palletsList = document.getElementById('palletsList');
+    if (!palletsList) return;
+
     const searchTerm = filterElements.searchName?.value.toLowerCase() || '';
     const companyId = filterElements.filterCompany?.value || '';
     const minPrice = parseFloat(filterElements.minPrice?.value) || 0;
     const maxPrice = parseFloat(filterElements.maxPrice?.value) || Infinity;
     const sortOrder = filterElements.sortOrder?.value || 'name_asc';
 
-    const items = document.querySelectorAll('tr[data-company-id], .accordion-item[data-company-id]');
+    const items = palletsList.querySelectorAll('.pallet-item');
     let visibleCount = 0;
 
     // Filter items
@@ -17,7 +21,7 @@ const filterAndSortPallets = function() {
         const companyMatch = !companyId || item.dataset.companyId === companyId;
         const price = parseFloat(item.dataset.price);
         const priceMatch = price >= minPrice && (maxPrice === Infinity || price <= maxPrice);
-        const nameMatch = item.querySelector('td:first-child, .accordion-button')
+        const nameMatch = item.querySelector('.card-title')
             ?.textContent.toLowerCase().includes(searchTerm);
 
         if (companyMatch && priceMatch && nameMatch) {
@@ -38,11 +42,11 @@ const filterAndSortPallets = function() {
         
         switch(sortOrder) {
             case 'name_asc':
-                return (a.querySelector('td:first-child, .accordion-button')?.textContent || '')
-                    .localeCompare(b.querySelector('td:first-child, .accordion-button')?.textContent || '');
+                return (a.querySelector('.card-title')?.textContent || '')
+                    .localeCompare(b.querySelector('.card-title')?.textContent || '');
             case 'name_desc':
-                return (b.querySelector('td:first-child, .accordion-button')?.textContent || '')
-                    .localeCompare(a.querySelector('td:first-child, .accordion-button')?.textContent || '');
+                return (b.querySelector('.card-title')?.textContent || '')
+                    .localeCompare(a.querySelector('.card-title')?.textContent || '');
             case 'price_asc':
                 return parseFloat(aValue.price) - parseFloat(bValue.price);
             case 'price_desc':
@@ -61,10 +65,7 @@ const filterAndSortPallets = function() {
     });
 
     // Update DOM with sorted items
-    const container = items[0]?.parentNode;
-    if (container) {
-        itemsArray.forEach(item => container.appendChild(item));
-    }
+    itemsArray.forEach(item => palletsList.appendChild(item));
 
     // Show/hide no results message
     const noResultsElement = document.getElementById('noResults');
@@ -76,7 +77,8 @@ const filterAndSortPallets = function() {
 // Calculate desi values for form
 function calculateDesi() {
     // Only proceed if we're in the pallet form modal
-    if (!document.getElementById('palletModal')) return;
+    const palletModal = document.getElementById('palletModal');
+    if (!palletModal || !palletModal.classList.contains('show')) return;
 
     const getInputValue = (id) => {
         const element = document.getElementById(id);
@@ -90,51 +92,54 @@ function calculateDesi() {
         }
     };
 
-    // Get all input values
-    const boardThickness = getInputValue('boardThickness');
-    const upperLength = getInputValue('upperBoardLength');
-    const upperWidth = getInputValue('upperBoardWidth');
-    const upperQuantity = getInputValue('upperBoardQuantity');
-    
-    const lowerLength = getInputValue('lowerBoardLength');
-    const lowerWidth = getInputValue('lowerBoardWidth');
-    const lowerQuantity = getInputValue('lowerBoardQuantity');
-    
-    const closureLength = getInputValue('closureLength');
-    const closureWidth = getInputValue('closureWidth');
-    const closureQuantity = getInputValue('closureQuantity');
-    
-    const blockLength = getInputValue('blockLength');
-    const blockWidth = getInputValue('blockWidth');
-    const blockHeight = getInputValue('blockHeight');
+    try {
+        // Get all input values
+        const boardThickness = getInputValue('boardThickness');
+        const upperLength = getInputValue('upperBoardLength');
+        const upperWidth = getInputValue('upperBoardWidth');
+        const upperQuantity = getInputValue('upperBoardQuantity');
+        
+        const lowerLength = getInputValue('lowerBoardLength');
+        const lowerWidth = getInputValue('lowerBoardWidth');
+        const lowerQuantity = getInputValue('lowerBoardQuantity');
+        
+        const closureLength = getInputValue('closureLength');
+        const closureWidth = getInputValue('closureWidth');
+        const closureQuantity = getInputValue('closureQuantity');
+        
+        const blockLength = getInputValue('blockLength');
+        const blockWidth = getInputValue('blockWidth');
+        const blockHeight = getInputValue('blockHeight');
 
-    // Calculate volumes
-    const upperDesi = (upperLength * upperWidth * boardThickness * upperQuantity) / 1000;
-    const lowerDesi = (lowerLength * lowerWidth * boardThickness * lowerQuantity) / 1000;
-    const closureDesi = (closureLength * closureWidth * boardThickness * closureQuantity) / 1000;
-    const blockDesi = (blockLength * blockWidth * blockHeight * 9) / 1000;
-    const totalDesi = upperDesi + lowerDesi + closureDesi + blockDesi;
+        // Calculate volumes
+        const upperDesi = (upperLength * upperWidth * boardThickness * upperQuantity) / 1000;
+        const lowerDesi = (lowerLength * lowerWidth * boardThickness * lowerQuantity) / 1000;
+        const closureDesi = (closureLength * closureWidth * boardThickness * closureQuantity) / 1000;
+        const blockDesi = (blockLength * blockWidth * blockHeight * 9) / 1000;
+        const totalDesi = upperDesi + lowerDesi + closureDesi + blockDesi;
 
-    // Update UI elements only if they exist
-    if (document.getElementById('upperBoardDesi')) updateElement('upperBoardDesi', upperDesi);
-    if (document.getElementById('lowerBoardDesi')) updateElement('lowerBoardDesi', lowerDesi);
-    if (document.getElementById('closureDesi')) updateElement('closureDesi', closureDesi);
-    if (document.getElementById('blockDesi')) updateElement('blockDesi', blockDesi);
-    if (document.getElementById('totalDesi')) updateElement('totalDesi', totalDesi);
+        // Update UI elements only if they exist
+        updateElement('upperBoardDesi', upperDesi);
+        updateElement('lowerBoardDesi', lowerDesi);
+        updateElement('closureDesi', closureDesi);
+        updateElement('blockDesi', blockDesi);
+        updateElement('totalDesi', totalDesi);
 
-    // Calculate and update price per desi if price is available
-    const price = getInputValue('price');
-    if (price > 0 && totalDesi > 0) {
-        const pricePerDesi = price / totalDesi;
-        if (document.getElementById('pricePerDesi')) {
+        // Calculate and update price per desi if price is available
+        const price = getInputValue('price');
+        if (price > 0 && totalDesi > 0) {
+            const pricePerDesi = price / totalDesi;
             updateElement('pricePerDesi', pricePerDesi);
         }
+    } catch (error) {
+        console.error('Error calculating desi:', error);
     }
 }
 
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize filter elements only if we're on the pallets page
-    if (document.getElementById('palletsList')) {
+    const palletsList = document.getElementById('palletsList');
+    if (palletsList) {
         filterElements = {
             searchName: document.getElementById('searchName'),
             filterCompany: document.getElementById('filterCompany'),
@@ -153,12 +158,13 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
 
-        // Initial filtering only if we're on the pallets page
+        // Initial filtering
         filterAndSortPallets();
     }
     
-    // Add desi calculation listeners only if we're on a page with the pallet form
-    if (document.getElementById('palletModal')) {
+    // Initialize modals and add event listeners for the pallet form
+    const palletModal = document.getElementById('palletModal');
+    if (palletModal) {
         const desiInputs = [
             'boardThickness', 'upperBoardLength', 'upperBoardWidth', 'upperBoardQuantity',
             'lowerBoardLength', 'lowerBoardWidth', 'lowerBoardQuantity',
@@ -173,13 +179,12 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
 
-        // Initial calculation
-        calculateDesi();
-    }
+        // Initialize Bootstrap modal
+        new bootstrap.Modal(palletModal);
 
-    // Initialize Bootstrap modal only if modal element exists
-    const modalElement = document.getElementById('palletModal');
-    const palletModal = modalElement ? new bootstrap.Modal(modalElement) : null;
+        // Initial calculation when modal is shown
+        palletModal.addEventListener('shown.bs.modal', calculateDesi);
+    }
 
     // Save pallet handler
     const handleSavePallet = async () => {
@@ -257,8 +262,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             });
 
-            if (palletModal) {
-                palletModal.show();
+            const modalElement = document.getElementById('palletModal');
+            if (modalElement) {
+                const modal = bootstrap.Modal.getInstance(modalElement) || new bootstrap.Modal(modalElement);
+                modal.show();
                 calculateDesi();
             }
         } catch (error) {
@@ -289,11 +296,9 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     };
 
-    // Add event listeners to action buttons only if we're on the pallets page
-    if (document.getElementById('palletsList')) {
-        document.querySelectorAll('.edit-pallet').forEach(btn => 
-            btn.addEventListener('click', handleEditPallet));
-        document.querySelectorAll('.delete-pallet').forEach(btn => 
-            btn.addEventListener('click', handleDeletePallet));
-    }
+    // Add event listeners to action buttons
+    document.querySelectorAll('.edit-pallet').forEach(btn => 
+        btn.addEventListener('click', handleEditPallet));
+    document.querySelectorAll('.delete-pallet').forEach(btn => 
+        btn.addEventListener('click', handleDeletePallet));
 });
