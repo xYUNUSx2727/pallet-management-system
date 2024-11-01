@@ -3,32 +3,37 @@ document.addEventListener('DOMContentLoaded', function() {
     const palletForm = document.getElementById('palletForm');
     const saveButton = document.getElementById('savePallet');
 
-    // Filter elements
-    const searchName = document.getElementById('searchName');
-    const filterCompany = document.getElementById('filterCompany');
-    const minPrice = document.getElementById('minPrice');
-    const maxPrice = document.getElementById('maxPrice');
-    const sortOrder = document.getElementById('sortOrder');
-    const noResults = document.getElementById('noResults');
+    // Filter elements - check existence before using
+    const filterElements = {
+        searchName: document.getElementById('searchName'),
+        filterCompany: document.getElementById('filterCompany'),
+        minPrice: document.getElementById('minPrice'),
+        maxPrice: document.getElementById('maxPrice'),
+        sortOrder: document.getElementById('sortOrder'),
+        noResults: document.getElementById('noResults')
+    };
 
     // Filtering and sorting function
     function filterAndSortPallets() {
         const rows = Array.from(document.querySelectorAll('#palletsList tr'));
-        const searchText = searchName.value.toLowerCase();
-        const companyId = filterCompany.value;
-        const minPriceValue = parseFloat(minPrice.value) || 0;
-        const maxPriceValue = parseFloat(maxPrice.value) || Infinity;
-        const [sortKey, sortDir] = sortOrder.value.split('_');
+        const searchText = filterElements.searchName?.value.toLowerCase() || '';
+        const companyId = filterElements.filterCompany?.value || '';
+        const minPriceValue = parseFloat(filterElements.minPrice?.value) || 0;
+        const maxPriceValue = parseFloat(filterElements.maxPrice?.value) || Infinity;
+        const [sortKey, sortDir] = (filterElements.sortOrder?.value || 'name_asc').split('_');
 
         let visibleRows = rows.filter(row => {
+            if (!row.children.length) return false;
+            
             const name = row.children[0].textContent.toLowerCase();
             const rowCompanyId = row.dataset.companyId;
-            const price = parseFloat(row.dataset.price);
+            const price = parseFloat(row.dataset.price) || 0;
 
-            return name.includes(searchText) &&
-                   (!companyId || rowCompanyId === companyId) &&
-                   price >= minPriceValue &&
-                   price <= maxPriceValue;
+            const matchesSearch = searchText ? name.includes(searchText) : true;
+            const matchesCompany = companyId ? rowCompanyId === companyId : true;
+            const matchesPrice = price >= minPriceValue && price <= maxPriceValue;
+
+            return matchesSearch && matchesCompany && matchesPrice;
         });
 
         // Sorting
@@ -41,13 +46,16 @@ document.addEventListener('DOMContentLoaded', function() {
                     bValue = b.children[0].textContent.toLowerCase();
                     break;
                 case 'price':
-                    aValue = parseFloat(a.dataset.price);
-                    bValue = parseFloat(b.dataset.price);
+                    aValue = parseFloat(a.dataset.price) || 0;
+                    bValue = parseFloat(b.dataset.price) || 0;
                     break;
                 case 'volume':
-                    aValue = parseFloat(a.dataset.volume);
-                    bValue = parseFloat(b.dataset.volume);
+                    aValue = parseFloat(a.dataset.volume) || 0;
+                    bValue = parseFloat(b.dataset.volume) || 0;
                     break;
+                default:
+                    aValue = a.children[0].textContent.toLowerCase();
+                    bValue = b.children[0].textContent.toLowerCase();
             }
 
             if (sortDir === 'asc') {
@@ -59,18 +67,23 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Update visibility
         const tbody = document.getElementById('palletsList');
-        tbody.innerHTML = '';
-        visibleRows.forEach(row => tbody.appendChild(row));
-
-        // Show/hide no results message
-        noResults.classList.toggle('d-none', visibleRows.length > 0);
+        if (tbody) {
+            tbody.innerHTML = '';
+            visibleRows.forEach(row => tbody.appendChild(row));
+            
+            // Show/hide no results message
+            if (filterElements.noResults) {
+                filterElements.noResults.classList.toggle('d-none', visibleRows.length > 0);
+            }
+        }
     }
 
     // Add event listeners for filters if elements exist
-    [searchName, filterCompany, minPrice, maxPrice, sortOrder].forEach(element => {
+    Object.values(filterElements).forEach(element => {
         if (element) {
-            element.addEventListener('input', filterAndSortPallets);
-            element.addEventListener('change', filterAndSortPallets);
+            ['input', 'change'].forEach(eventType => {
+                element.addEventListener(eventType, filterAndSortPallets);
+            });
         }
     });
 
@@ -116,7 +129,6 @@ document.addEventListener('DOMContentLoaded', function() {
             block_height: parseFloat(document.getElementById('blockHeight').value)
         };
 
-        // Validate form data
         const errors = validateFormData(palletData);
         if (errors.length > 0) {
             alert('Lütfen aşağıdaki hataları düzeltin:\n\n' + errors.join('\n'));
@@ -147,7 +159,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Calculate desi values
     function calculateDesi(length, width, height, quantity = 1) {
         if (!length || !width || !height || !quantity) return 0;
         return ((length * width * height * quantity) / 1000).toFixed(2);
@@ -157,7 +168,6 @@ document.addEventListener('DOMContentLoaded', function() {
         try {
             const thickness = parseFloat(document.getElementById('boardThickness').value) || 0;
 
-            // Upper boards
             const upperLength = parseFloat(document.getElementById('upperBoardLength').value) || 0;
             const upperWidth = parseFloat(document.getElementById('upperBoardWidth').value) || 0;
             const upperQuantity = parseInt(document.getElementById('upperBoardQuantity').value) || 0;
@@ -165,7 +175,6 @@ document.addEventListener('DOMContentLoaded', function() {
             const upperDesiElement = document.getElementById('upperBoardDesi');
             if (upperDesiElement) upperDesiElement.textContent = upperDesi;
 
-            // Lower boards
             const lowerLength = parseFloat(document.getElementById('lowerBoardLength').value) || 0;
             const lowerWidth = parseFloat(document.getElementById('lowerBoardWidth').value) || 0;
             const lowerQuantity = parseInt(document.getElementById('lowerBoardQuantity').value) || 0;
@@ -173,7 +182,6 @@ document.addEventListener('DOMContentLoaded', function() {
             const lowerDesiElement = document.getElementById('lowerBoardDesi');
             if (lowerDesiElement) lowerDesiElement.textContent = lowerDesi;
 
-            // Closure boards
             const closureLength = parseFloat(document.getElementById('closureLength').value) || 0;
             const closureWidth = parseFloat(document.getElementById('closureWidth').value) || 0;
             const closureQuantity = parseInt(document.getElementById('closureQuantity').value) || 0;
@@ -181,7 +189,6 @@ document.addEventListener('DOMContentLoaded', function() {
             const closureDesiElement = document.getElementById('closureDesi');
             if (closureDesiElement) closureDesiElement.textContent = closureDesi;
 
-            // Blocks (fixed 9 quantity)
             const blockLength = parseFloat(document.getElementById('blockLength').value) || 0;
             const blockWidth = parseFloat(document.getElementById('blockWidth').value) || 0;
             const blockHeight = parseFloat(document.getElementById('blockHeight').value) || 0;
@@ -193,7 +200,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Add event listeners for real-time desi calculations
     const dimensionInputs = [
         'boardThickness', 'upperBoardLength', 'upperBoardWidth', 'upperBoardQuantity',
         'lowerBoardLength', 'lowerBoardWidth', 'lowerBoardQuantity',
@@ -205,18 +211,10 @@ document.addEventListener('DOMContentLoaded', function() {
         const element = document.getElementById(inputId);
         if (element) {
             element.addEventListener('input', updateDesiCalculations);
-        }
-    });
-
-    // Add placeholder text to all dimension inputs
-    dimensionInputs.forEach(inputId => {
-        const element = document.getElementById(inputId);
-        if (element) {
             element.placeholder = 'cm';
         }
     });
 
-    // Edit Pallet
     document.querySelectorAll('.edit-pallet').forEach(button => {
         button.addEventListener('click', async (e) => {
             const palletId = e.currentTarget.dataset.id;
@@ -227,7 +225,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 const pallet = await response.json();
 
-                // Fill form fields
                 document.getElementById('palletId').value = pallet.id;
                 document.getElementById('palletName').value = pallet.name;
                 document.getElementById('companySelect').value = pallet.company_id;
@@ -256,7 +253,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Delete Pallet
     document.querySelectorAll('.delete-pallet').forEach(button => {
         button.addEventListener('click', async (e) => {
             if (confirm('Bu paleti silmek istediğinizden emin misiniz?')) {
@@ -281,7 +277,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // View Pallet Details
     document.querySelectorAll('.view-pallet').forEach(button => {
         button.addEventListener('click', (e) => {
             const palletId = e.currentTarget.dataset.id;
@@ -289,7 +284,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Initialize desi calculations for edit mode
     if (document.getElementById('palletModal').classList.contains('show')) {
         updateDesiCalculations();
     }
