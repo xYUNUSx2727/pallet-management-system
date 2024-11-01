@@ -75,6 +75,9 @@ const filterAndSortPallets = function() {
 
 // Calculate desi values for form
 function calculateDesi() {
+    // Only proceed if we're in the pallet form modal
+    if (!document.getElementById('palletModal')) return;
+
     const getInputValue = (id) => {
         const element = document.getElementById(id);
         return element ? parseFloat(element.value) || 0 : 0;
@@ -87,12 +90,7 @@ function calculateDesi() {
         }
     };
 
-    // Only proceed with calculations if we're on a page with the pallet form
-    if (!document.getElementById('palletModal')) {
-        return; // Exit if we're not on a page with the pallet form
-    }
-
-    // Get input values
+    // Get all input values
     const boardThickness = getInputValue('boardThickness');
     const upperLength = getInputValue('upperBoardLength');
     const upperWidth = getInputValue('upperBoardWidth');
@@ -117,18 +115,20 @@ function calculateDesi() {
     const blockDesi = (blockLength * blockWidth * blockHeight * 9) / 1000;
     const totalDesi = upperDesi + lowerDesi + closureDesi + blockDesi;
 
-    // Update UI with calculated values
-    updateElement('upperBoardDesi', upperDesi);
-    updateElement('lowerBoardDesi', lowerDesi);
-    updateElement('closureDesi', closureDesi);
-    updateElement('blockDesi', blockDesi);
-    updateElement('totalDesi', totalDesi);
+    // Update UI elements only if they exist
+    if (document.getElementById('upperBoardDesi')) updateElement('upperBoardDesi', upperDesi);
+    if (document.getElementById('lowerBoardDesi')) updateElement('lowerBoardDesi', lowerDesi);
+    if (document.getElementById('closureDesi')) updateElement('closureDesi', closureDesi);
+    if (document.getElementById('blockDesi')) updateElement('blockDesi', blockDesi);
+    if (document.getElementById('totalDesi')) updateElement('totalDesi', totalDesi);
 
     // Calculate and update price per desi if price is available
     const price = getInputValue('price');
     if (price > 0 && totalDesi > 0) {
         const pricePerDesi = price / totalDesi;
-        updateElement('pricePerDesi', pricePerDesi);
+        if (document.getElementById('pricePerDesi')) {
+            updateElement('pricePerDesi', pricePerDesi);
+        }
     }
 }
 
@@ -140,13 +140,12 @@ document.addEventListener('DOMContentLoaded', function() {
             filterCompany: document.getElementById('filterCompany'),
             minPrice: document.getElementById('minPrice'),
             maxPrice: document.getElementById('maxPrice'),
-            sortOrder: document.getElementById('sortOrder'),
-            noResults: document.getElementById('noResults')
+            sortOrder: document.getElementById('sortOrder')
         };
 
         // Add filter event listeners only if elements exist
         Object.values(filterElements).forEach(element => {
-            if (element && element.id !== 'noResults') {
+            if (element) {
                 element.addEventListener('change', filterAndSortPallets);
                 if (element.tagName === 'INPUT') {
                     element.addEventListener('keyup', filterAndSortPallets);
@@ -173,6 +172,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 element.addEventListener('input', calculateDesi);
             }
         });
+
+        // Initial calculation
+        calculateDesi();
     }
 
     // Initialize Bootstrap modal only if modal element exists
