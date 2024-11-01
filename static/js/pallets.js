@@ -27,9 +27,43 @@ const filterAndSortPallets = function() {
     filterElements.noResults.classList.toggle('d-none', visibleCount > 0);
 };
 
+function calculateDesi() {
+    // Get values from inputs
+    const boardThickness = parseFloat(document.getElementById('boardThickness')?.value) || 0;
+    const upperLength = parseFloat(document.getElementById('upperBoardLength')?.value) || 0;
+    const upperWidth = parseFloat(document.getElementById('upperBoardWidth')?.value) || 0;
+    const upperQuantity = parseInt(document.getElementById('upperBoardQuantity')?.value) || 0;
+    
+    const lowerLength = parseFloat(document.getElementById('lowerBoardLength')?.value) || 0;
+    const lowerWidth = parseFloat(document.getElementById('lowerBoardWidth')?.value) || 0;
+    const lowerQuantity = parseInt(document.getElementById('lowerBoardQuantity')?.value) || 0;
+    
+    const closureLength = parseFloat(document.getElementById('closureLength')?.value) || 0;
+    const closureWidth = parseFloat(document.getElementById('closureWidth')?.value) || 0;
+    const closureQuantity = parseInt(document.getElementById('closureQuantity')?.value) || 0;
+    
+    const blockLength = parseFloat(document.getElementById('blockLength')?.value) || 0;
+    const blockWidth = parseFloat(document.getElementById('blockWidth')?.value) || 0;
+    const blockHeight = parseFloat(document.getElementById('blockHeight')?.value) || 0;
+
+    // Calculate volumes
+    const upperDesi = (upperLength * upperWidth * boardThickness * upperQuantity) / 1000;
+    const lowerDesi = (lowerLength * lowerWidth * boardThickness * lowerQuantity) / 1000;
+    const closureDesi = (closureLength * closureWidth * boardThickness * closureQuantity) / 1000;
+    const blockDesi = (blockLength * blockWidth * blockHeight * 9) / 1000;
+    const totalDesi = upperDesi + lowerDesi + closureDesi + blockDesi;
+
+    // Update UI
+    document.getElementById('upperBoardDesi').textContent = upperDesi.toFixed(2);
+    document.getElementById('lowerBoardDesi').textContent = lowerDesi.toFixed(2);
+    document.getElementById('closureDesi').textContent = closureDesi.toFixed(2);
+    document.getElementById('blockDesi').textContent = blockDesi.toFixed(2);
+    document.getElementById('totalDesi').textContent = totalDesi.toFixed(2);
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     // Filter elements with null checks
-    const filterElements = {
+    window.filterElements = {
         searchName: document.getElementById('searchName'),
         filterCompany: document.getElementById('filterCompany'),
         minPrice: document.getElementById('minPrice'),
@@ -39,6 +73,16 @@ document.addEventListener('DOMContentLoaded', function() {
         palletsList: document.getElementById('palletsList'),
         palletsAccordion: document.getElementById('palletsAccordion')
     };
+
+    // Add input event listeners for real-time desi calculations
+    const inputs = ['boardThickness', 'upperBoardLength', 'upperBoardWidth', 'upperBoardQuantity',
+                    'lowerBoardLength', 'lowerBoardWidth', 'lowerBoardQuantity',
+                    'closureLength', 'closureWidth', 'closureQuantity',
+                    'blockLength', 'blockWidth', 'blockHeight'];
+
+    inputs.forEach(id => {
+        document.getElementById(id)?.addEventListener('input', calculateDesi);
+    });
 
     // Add filter event listeners right after filterElements definition
     Object.values(filterElements).forEach(element => {
@@ -143,6 +187,7 @@ document.addEventListener('DOMContentLoaded', function() {
             });
 
             palletModal?.show();
+            calculateDesi(); // Calculate and display desi values when editing
         } catch (error) {
             console.error('Hata:', error);
             alert('Palet bilgileri yüklenirken bir hata oluştu');
