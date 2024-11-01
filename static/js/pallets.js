@@ -14,134 +14,21 @@ document.addEventListener('DOMContentLoaded', function() {
         palletsList: document.getElementById('palletsList')
     };
 
-    // Form validation
-    function validateFormData(data) {
-        const errors = [];
-        
-        if (!data.name) errors.push('Palet adı gereklidir');
-        if (!data.company_id) errors.push('Firma seçimi gereklidir');
-        if (data.price < 0) errors.push('Fiyat 0\'dan küçük olamaz');
-        
-        // Validate dimensions
-        const dimensions = {
-            'Tahta kalınlığı': data.board_thickness,
-            'Üst tahta uzunluğu': data.upper_board_length,
-            'Üst tahta genişliği': data.upper_board_width,
-            'Üst tahta adedi': data.upper_board_quantity,
-            'Alt tahta uzunluğu': data.lower_board_length,
-            'Alt tahta genişliği': data.lower_board_width,
-            'Alt tahta adedi': data.lower_board_quantity,
-            'Kapatma uzunluğu': data.closure_length,
-            'Kapatma genişliği': data.closure_width,
-            'Kapatma adedi': data.closure_quantity,
-            'Takoz uzunluğu': data.block_length,
-            'Takoz genişliği': data.block_width,
-            'Takoz yüksekliği': data.block_height
+    // Debounce function for performance optimization
+    function debounce(func, wait) {
+        let timeout;
+        return function executedFunction(...args) {
+            const later = () => {
+                clearTimeout(timeout);
+                func(...args);
+            };
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
         };
-
-        Object.entries(dimensions).forEach(([name, value]) => {
-            if (!value || value <= 0) errors.push(`${name} 0'dan büyük olmalıdır`);
-        });
-        
-        return errors;
     }
-
-    // Desi calculation functions
-    function calculateDesi(length, width, height, quantity = 1) {
-        if (!length || !width || !height || !quantity) return 0;
-        return ((length * width * height * quantity) / 1000).toFixed(2);
-    }
-
-    function updateDesiCalculations() {
-        const formElements = {
-            boardThickness: document.getElementById('boardThickness'),
-            upperLength: document.getElementById('upperBoardLength'),
-            upperWidth: document.getElementById('upperBoardWidth'),
-            upperQuantity: document.getElementById('upperBoardQuantity'),
-            lowerLength: document.getElementById('lowerBoardLength'),
-            lowerWidth: document.getElementById('lowerBoardWidth'),
-            lowerQuantity: document.getElementById('lowerBoardQuantity'),
-            closureLength: document.getElementById('closureLength'),
-            closureWidth: document.getElementById('closureWidth'),
-            closureQuantity: document.getElementById('closureQuantity'),
-            blockLength: document.getElementById('blockLength'),
-            blockWidth: document.getElementById('blockWidth'),
-            blockHeight: document.getElementById('blockHeight')
-        };
-
-        const desiElements = {
-            upperDesi: document.getElementById('upperBoardDesi'),
-            lowerDesi: document.getElementById('lowerBoardDesi'),
-            closureDesi: document.getElementById('closureDesi'),
-            blockDesi: document.getElementById('blockDesi')
-        };
-
-        if (formElements.boardThickness) {
-            const thickness = parseFloat(formElements.boardThickness.value) || 0;
-
-            // Upper boards
-            if (desiElements.upperDesi && formElements.upperLength && formElements.upperWidth && formElements.upperQuantity) {
-                const upperDesi = calculateDesi(
-                    parseFloat(formElements.upperLength.value),
-                    parseFloat(formElements.upperWidth.value),
-                    thickness,
-                    parseInt(formElements.upperQuantity.value)
-                );
-                desiElements.upperDesi.textContent = upperDesi;
-            }
-
-            // Lower boards
-            if (desiElements.lowerDesi && formElements.lowerLength && formElements.lowerWidth && formElements.lowerQuantity) {
-                const lowerDesi = calculateDesi(
-                    parseFloat(formElements.lowerLength.value),
-                    parseFloat(formElements.lowerWidth.value),
-                    thickness,
-                    parseInt(formElements.lowerQuantity.value)
-                );
-                desiElements.lowerDesi.textContent = lowerDesi;
-            }
-
-            // Closure boards
-            if (desiElements.closureDesi && formElements.closureLength && formElements.closureWidth && formElements.closureQuantity) {
-                const closureDesi = calculateDesi(
-                    parseFloat(formElements.closureLength.value),
-                    parseFloat(formElements.closureWidth.value),
-                    thickness,
-                    parseInt(formElements.closureQuantity.value)
-                );
-                desiElements.closureDesi.textContent = closureDesi;
-            }
-        }
-
-        // Blocks (fixed 9 pieces)
-        if (desiElements.blockDesi && formElements.blockLength && formElements.blockWidth && formElements.blockHeight) {
-            const blockDesi = calculateDesi(
-                parseFloat(formElements.blockLength.value),
-                parseFloat(formElements.blockWidth.value),
-                parseFloat(formElements.blockHeight.value),
-                9
-            );
-            desiElements.blockDesi.textContent = blockDesi;
-        }
-    }
-
-    // Add desi calculation listeners
-    const dimensionInputs = [
-        'boardThickness', 'upperBoardLength', 'upperBoardWidth', 'upperBoardQuantity',
-        'lowerBoardLength', 'lowerBoardWidth', 'lowerBoardQuantity',
-        'closureLength', 'closureWidth', 'closureQuantity',
-        'blockLength', 'blockWidth', 'blockHeight'
-    ];
-
-    dimensionInputs.forEach(inputId => {
-        const element = document.getElementById(inputId);
-        if (element) {
-            element.addEventListener('input', updateDesiCalculations);
-        }
-    });
 
     // Save pallet handler
-    async function handleSavePallet() {
+    const handleSavePallet = async () => {
         const palletId = document.getElementById('palletId')?.value;
         const formElements = {
             name: document.getElementById('palletName'),
@@ -198,79 +85,138 @@ document.addEventListener('DOMContentLoaded', function() {
             console.error('Hata:', error);
             alert('İşlem sırasında bir hata oluştu');
         }
+    };
+
+    // Form validation
+    function validateFormData(data) {
+        const errors = [];
+        
+        if (!data.name) errors.push('Palet adı gereklidir');
+        if (!data.company_id) errors.push('Firma seçimi gereklidir');
+        if (data.price < 0) errors.push('Fiyat 0\'dan küçük olamaz');
+        
+        // Validate dimensions
+        const dimensions = {
+            'Tahta kalınlığı': data.board_thickness,
+            'Üst tahta uzunluğu': data.upper_board_length,
+            'Üst tahta genişliği': data.upper_board_width,
+            'Üst tahta adedi': data.upper_board_quantity,
+            'Alt tahta uzunluğu': data.lower_board_length,
+            'Alt tahta genişliği': data.lower_board_width,
+            'Alt tahta adedi': data.lower_board_quantity,
+            'Kapatma uzunluğu': data.closure_length,
+            'Kapatma genişliği': data.closure_width,
+            'Kapatma adedi': data.closure_quantity,
+            'Takoz uzunluğu': data.block_length,
+            'Takoz genişliği': data.block_width,
+            'Takoz yüksekliği': data.block_height
+        };
+
+        Object.entries(dimensions).forEach(([name, value]) => {
+            if (!value || value <= 0) errors.push(`${name} 0'dan büyük olmalıdır`);
+        });
+        
+        return errors;
     }
 
-    // Filtering and sorting function
+    // Optimized filtering and sorting function
     function filterAndSortPallets() {
-        if (!filterElements.palletsList) return;
+        if (!filterElements.palletsList) {
+            console.error('Palet listesi bulunamadı');
+            return;
+        }
 
-        const rows = Array.from(filterElements.palletsList.querySelectorAll('tr'));
-        const searchText = filterElements.searchName?.value.toLowerCase() || '';
-        const companyId = filterElements.filterCompany?.value || '';
-        const minPriceValue = parseFloat(filterElements.minPrice?.value) || 0;
-        const maxPriceValue = parseFloat(filterElements.maxPrice?.value) || Infinity;
-        const [sortKey, sortDir] = (filterElements.sortOrder?.value || 'name_asc').split('_');
+        try {
+            const rows = Array.from(filterElements.palletsList.getElementsByTagName('tr'));
+            const searchText = filterElements.searchName?.value.toLowerCase() || '';
+            const companyId = filterElements.filterCompany?.value || '';
+            const minPriceValue = parseFloat(filterElements.minPrice?.value) || 0;
+            const maxPriceValue = parseFloat(filterElements.maxPrice?.value) || Infinity;
+            const [sortKey, sortDir] = (filterElements.sortOrder?.value || 'name_asc').split('_');
 
-        const visibleRows = rows.filter(row => {
-            if (!row.children.length) return false;
-            
-            const name = row.children[0].textContent.toLowerCase();
-            const rowCompanyId = row.dataset.companyId;
-            const price = parseFloat(row.dataset.price) || 0;
+            // Create document fragment for better performance
+            const fragment = document.createDocumentFragment();
+            let visibleCount = 0;
 
-            const matchesSearch = !searchText || name.includes(searchText);
-            const matchesCompany = !companyId || rowCompanyId === companyId;
-            const matchesPrice = price >= minPriceValue && price <= maxPriceValue;
+            // Filter and sort in a single pass
+            rows.sort((a, b) => {
+                let aValue, bValue;
+                
+                switch(sortKey) {
+                    case 'name':
+                        aValue = a.children[0]?.textContent.toLowerCase();
+                        bValue = b.children[0]?.textContent.toLowerCase();
+                        break;
+                    case 'price':
+                        aValue = parseFloat(a.dataset.price) || 0;
+                        bValue = parseFloat(b.dataset.price) || 0;
+                        break;
+                    case 'volume':
+                        aValue = parseFloat(a.dataset.volume) || 0;
+                        bValue = parseFloat(b.dataset.volume) || 0;
+                        break;
+                    default:
+                        aValue = a.children[0]?.textContent.toLowerCase();
+                        bValue = b.children[0]?.textContent.toLowerCase();
+                }
 
-            return matchesSearch && matchesCompany && matchesPrice;
-        });
+                return sortDir === 'asc' ? 
+                    (aValue < bValue ? -1 : aValue > bValue ? 1 : 0) :
+                    (aValue > bValue ? -1 : aValue < bValue ? 1 : 0);
+            }).forEach(row => {
+                if (!row.children.length) return;
 
-        // Sorting
-        visibleRows.sort((a, b) => {
-            let aValue, bValue;
-            
-            switch(sortKey) {
-                case 'name':
-                    aValue = a.children[0].textContent.toLowerCase();
-                    bValue = b.children[0].textContent.toLowerCase();
-                    break;
-                case 'price':
-                    aValue = parseFloat(a.dataset.price) || 0;
-                    bValue = parseFloat(b.dataset.price) || 0;
-                    break;
-                case 'volume':
-                    aValue = parseFloat(a.dataset.volume) || 0;
-                    bValue = parseFloat(b.dataset.volume) || 0;
-                    break;
-                default:
-                    aValue = a.children[0].textContent.toLowerCase();
-                    bValue = b.children[0].textContent.toLowerCase();
+                const name = row.children[0].textContent.toLowerCase();
+                const rowCompanyId = row.dataset.companyId;
+                const price = parseFloat(row.dataset.price) || 0;
+
+                const matchesSearch = !searchText || name.includes(searchText);
+                const matchesCompany = !companyId || rowCompanyId === companyId;
+                const matchesPrice = price >= minPriceValue && 
+                                   (maxPriceValue === Infinity || price <= maxPriceValue);
+
+                if (matchesSearch && matchesCompany && matchesPrice) {
+                    fragment.appendChild(row.cloneNode(true));
+                    visibleCount++;
+                }
+            });
+
+            // Clear and update the table efficiently
+            filterElements.palletsList.innerHTML = '';
+            filterElements.palletsList.appendChild(fragment);
+
+            // Update visibility of no results message
+            if (filterElements.noResults) {
+                filterElements.noResults.classList.toggle('d-none', visibleCount > 0);
             }
 
-            const sortMultiplier = sortDir === 'asc' ? 1 : -1;
-            return sortMultiplier * (aValue < bValue ? -1 : aValue > bValue ? 1 : 0);
-        });
-
-        // Update visibility
-        filterElements.palletsList.innerHTML = '';
-        visibleRows.forEach(row => filterElements.palletsList.appendChild(row));
-        
-        if (filterElements.noResults) {
-            filterElements.noResults.classList.toggle('d-none', visibleRows.length > 0);
+            console.log(`Filtreleme tamamlandı: ${visibleCount} sonuç bulundu`);
+        } catch (error) {
+            console.error('Filtreleme sırasında hata oluştu:', error);
+            if (filterElements.noResults) {
+                filterElements.noResults.classList.remove('d-none');
+                filterElements.noResults.textContent = 'Filtreleme sırasında bir hata oluştu. Lütfen tekrar deneyin.';
+            }
         }
     }
 
-    // Add event listeners for filters
+    // Debounced filter function for better performance
+    const debouncedFilter = debounce(filterAndSortPallets, 300);
+
+    // Add optimized event listeners for filters
     Object.entries(filterElements).forEach(([key, element]) => {
         if (element && ['searchName', 'filterCompany', 'minPrice', 'maxPrice', 'sortOrder'].includes(key)) {
             ['input', 'change'].forEach(eventType => {
-                element.addEventListener(eventType, filterAndSortPallets);
+                element.addEventListener(eventType, (e) => {
+                    console.log(`Filtre değişikliği: ${key} - ${e.type}`);
+                    debouncedFilter();
+                });
             });
         }
     });
 
     // Button event handlers
-    async function handleEditPallet(e) {
+    const handleEditPallet = async (e) => {
         const palletId = e.currentTarget.dataset.id;
         try {
             const response = await fetch(`/api/pallets/${palletId}`);
@@ -311,9 +257,9 @@ document.addEventListener('DOMContentLoaded', function() {
             console.error('Hata:', error);
             alert('Palet bilgileri yüklenirken bir hata oluştu');
         }
-    }
+    };
 
-    async function handleDeletePallet(e) {
+    const handleDeletePallet = async (e) => {
         if (confirm('Bu paleti silmek istediğinizden emin misiniz?')) {
             const palletId = e.currentTarget.dataset.id;
             try {
@@ -332,31 +278,27 @@ document.addEventListener('DOMContentLoaded', function() {
                 alert('İşlem sırasında bir hata oluştu');
             }
         }
-    }
+    };
 
-    function handleViewPallet(e) {
+    const handleViewPallet = (e) => {
         const palletId = e.currentTarget.dataset.id;
         window.location.href = `/pallets/${palletId}`;
-    }
+    };
 
     // Initialize button event listeners
     function initializeButtons() {
-        // Edit buttons
         document.querySelectorAll('.edit-pallet').forEach(button => {
             button.addEventListener('click', handleEditPallet);
         });
 
-        // Delete buttons
         document.querySelectorAll('.delete-pallet').forEach(button => {
             button.addEventListener('click', handleDeletePallet);
         });
 
-        // View buttons
         document.querySelectorAll('.view-pallet').forEach(button => {
             button.addEventListener('click', handleViewPallet);
         });
 
-        // Save button
         const saveButton = document.getElementById('savePallet');
         if (saveButton) {
             saveButton.addEventListener('click', handleSavePallet);
