@@ -95,7 +95,6 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!data.company_id) errors.push('Firma seçimi gereklidir');
         if (data.price < 0) errors.push('Fiyat 0\'dan küçük olamaz');
         
-        // Validate dimensions
         const dimensions = {
             'Tahta kalınlığı': data.board_thickness,
             'Üst tahta uzunluğu': data.upper_board_length,
@@ -119,66 +118,124 @@ document.addEventListener('DOMContentLoaded', function() {
         return errors;
     }
 
+    // Fetch updated pallet data
+    async function fetchPalletData() {
+        try {
+            const response = await fetch('/api/pallets');
+            if (!response.ok) throw new Error('Palet verisi alınamadı');
+            return await response.json();
+        } catch (error) {
+            console.error('Veri yükleme hatası:', error);
+            throw error;
+        }
+    }
+
+    // Create table row from pallet data
+    function createPalletRow(pallet) {
+        const row = document.createElement('tr');
+        row.dataset.companyId = pallet.company_id.toString();
+        row.dataset.price = pallet.price.toString();
+        row.dataset.volume = pallet.total_volume?.toString() || '0';
+
+        row.innerHTML = `
+            <td>${pallet.name}</td>
+            <td>${pallet.company_name}</td>
+            <td>${pallet.price.toFixed(2)}</td>
+            <td>${pallet.total_volume || 0}</td>
+            <td>
+                <div class="btn-group">
+                    <button class="btn btn-sm btn-info view-pallet" data-id="${pallet.id}" title="Görüntüle">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                    <button class="btn btn-sm btn-secondary edit-pallet" data-id="${pallet.id}" title="Düzenle">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="btn btn-sm btn-danger delete-pallet" data-id="${pallet.id}" title="Sil">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </td>
+        `;
+
+        // Add event listeners to the new row's buttons
+        row.querySelector('.view-pallet')?.addEventListener('click', handleViewPallet);
+        row.querySelector('.edit-pallet')?.addEventListener('click', handleEditPallet);
+        row.querySelector('.delete-pallet')?.addEventListener('click', handleDeletePallet);
+
+        return row;
+    }
+
     // Optimized filtering and sorting function
-    function filterAndSortPallets() {
+    async function filterAndSortPallets() {
         if (!filterElements.palletsList) {
             console.error('Palet listesi bulunamadı');
             return;
         }
 
         try {
-            const rows = Array.from(filterElements.palletsList.getElementsByTagName('tr'));
+            console.log('Filtreleme başlatılıyor...');
+            const pallets = await fetchPalletData();
+            
             const searchText = filterElements.searchName?.value.toLowerCase() || '';
             const companyId = filterElements.filterCompany?.value || '';
             const minPriceValue = parseFloat(filterElements.minPrice?.value) || 0;
             const maxPriceValue = parseFloat(filterElements.maxPrice?.value) || Infinity;
             const [sortKey, sortDir] = (filterElements.sortOrder?.value || 'name_asc').split('_');
 
+            console.log(`Filtre parametreleri:`, {
+                searchText,
+                companyId,
+                minPriceValue,
+                maxPriceValue,
+                sortKey,
+                sortDir
+            });
+
             // Create document fragment for better performance
             const fragment = document.createDocumentFragment();
             let visibleCount = 0;
 
-            // Filter and sort in a single pass
-            rows.sort((a, b) => {
+            // Filter and sort pallets
+            const filteredPallets = pallets.filter(pallet => {
+                const matchesSearch = !searchText || pallet.name.toLowerCase().includes(searchText);
+                const matchesCompany = !companyId || pallet.company_id.toString() === companyId;
+                const matchesPrice = pallet.price >= minPriceValue && 
+                                   (maxPriceValue === Infinity || pallet.price <= maxPriceValue);
+
+                return matchesSearch && matchesCompany && matchesPrice;
+            });
+
+            // Sort filtered pallets
+            filteredPallets.sort((a, b) => {
                 let aValue, bValue;
                 
                 switch(sortKey) {
                     case 'name':
-                        aValue = a.children[0]?.textContent.toLowerCase();
-                        bValue = b.children[0]?.textContent.toLowerCase();
+                        aValue = a.name.toLowerCase();
+                        bValue = b.name.toLowerCase();
                         break;
                     case 'price':
-                        aValue = parseFloat(a.dataset.price) || 0;
-                        bValue = parseFloat(b.dataset.price) || 0;
+                        aValue = a.price;
+                        bValue = b.price;
                         break;
                     case 'volume':
-                        aValue = parseFloat(a.dataset.volume) || 0;
-                        bValue = parseFloat(b.dataset.volume) || 0;
+                        aValue = a.total_volume || 0;
+                        bValue = b.total_volume || 0;
                         break;
                     default:
-                        aValue = a.children[0]?.textContent.toLowerCase();
-                        bValue = b.children[0]?.textContent.toLowerCase();
+                        aValue = a.name.toLowerCase();
+                        bValue = b.name.toLowerCase();
                 }
 
                 return sortDir === 'asc' ? 
                     (aValue < bValue ? -1 : aValue > bValue ? 1 : 0) :
                     (aValue > bValue ? -1 : aValue < bValue ? 1 : 0);
-            }).forEach(row => {
-                if (!row.children.length) return;
+            });
 
-                const name = row.children[0].textContent.toLowerCase();
-                const rowCompanyId = row.dataset.companyId;
-                const price = parseFloat(row.dataset.price) || 0;
-
-                const matchesSearch = !searchText || name.includes(searchText);
-                const matchesCompany = !companyId || rowCompanyId === companyId;
-                const matchesPrice = price >= minPriceValue && 
-                                   (maxPriceValue === Infinity || price <= maxPriceValue);
-
-                if (matchesSearch && matchesCompany && matchesPrice) {
-                    fragment.appendChild(row.cloneNode(true));
-                    visibleCount++;
-                }
+            // Create and append rows
+            filteredPallets.forEach(pallet => {
+                fragment.appendChild(createPalletRow(pallet));
+                visibleCount++;
             });
 
             // Clear and update the table efficiently
@@ -187,15 +244,20 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // Update visibility of no results message
             if (filterElements.noResults) {
-                filterElements.noResults.classList.toggle('d-none', visibleCount > 0);
+                if (visibleCount === 0) {
+                    filterElements.noResults.textContent = 'Arama kriterlerinize uygun palet bulunamadı.';
+                    filterElements.noResults.classList.remove('d-none');
+                } else {
+                    filterElements.noResults.classList.add('d-none');
+                }
             }
 
             console.log(`Filtreleme tamamlandı: ${visibleCount} sonuç bulundu`);
         } catch (error) {
             console.error('Filtreleme sırasında hata oluştu:', error);
             if (filterElements.noResults) {
+                filterElements.noResults.textContent = 'Filtreleme sırasında bir hata oluştu. Lütfen sayfayı yenileyin ve tekrar deneyin.';
                 filterElements.noResults.classList.remove('d-none');
-                filterElements.noResults.textContent = 'Filtreleme sırasında bir hata oluştu. Lütfen tekrar deneyin.';
             }
         }
     }
@@ -204,16 +266,34 @@ document.addEventListener('DOMContentLoaded', function() {
     const debouncedFilter = debounce(filterAndSortPallets, 300);
 
     // Add optimized event listeners for filters
-    Object.entries(filterElements).forEach(([key, element]) => {
-        if (element && ['searchName', 'filterCompany', 'minPrice', 'maxPrice', 'sortOrder'].includes(key)) {
-            ['input', 'change'].forEach(eventType => {
-                element.addEventListener(eventType, (e) => {
-                    console.log(`Filtre değişikliği: ${key} - ${e.type}`);
+    function initializeFilters() {
+        const filterKeys = ['searchName', 'filterCompany', 'minPrice', 'maxPrice', 'sortOrder'];
+        
+        filterKeys.forEach(key => {
+            const element = filterElements[key];
+            if (!element) return;
+
+            // Remove existing listeners to prevent duplicates
+            const newElement = element.cloneNode(true);
+            element.parentNode.replaceChild(newElement, element);
+            filterElements[key] = newElement;
+
+            // Add new listeners
+            if (key === 'filterCompany') {
+                newElement.addEventListener('change', (e) => {
+                    console.log(`Firma filtresi değişti: ${e.target.value}`);
                     debouncedFilter();
                 });
-            });
-        }
-    });
+            } else {
+                ['input', 'change'].forEach(eventType => {
+                    newElement.addEventListener(eventType, (e) => {
+                        console.log(`Filtre değişikliği: ${key} - ${e.type}`);
+                        debouncedFilter();
+                    });
+                });
+            }
+        });
+    }
 
     // Button event handlers
     const handleEditPallet = async (e) => {
@@ -251,7 +331,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             });
 
-            updateDesiCalculations();
             if (palletModal) palletModal.show();
         } catch (error) {
             console.error('Hata:', error);
@@ -268,7 +347,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
 
                 if (response.ok) {
-                    location.reload();
+                    await filterAndSortPallets(); // Refresh the list instead of reloading
                 } else {
                     const errorData = await response.json();
                     alert(errorData.message || 'Palet silinirken bir hata oluştu');
@@ -285,28 +364,13 @@ document.addEventListener('DOMContentLoaded', function() {
         window.location.href = `/pallets/${palletId}`;
     };
 
-    // Initialize button event listeners
-    function initializeButtons() {
-        document.querySelectorAll('.edit-pallet').forEach(button => {
-            button.addEventListener('click', handleEditPallet);
-        });
-
-        document.querySelectorAll('.delete-pallet').forEach(button => {
-            button.addEventListener('click', handleDeletePallet);
-        });
-
-        document.querySelectorAll('.view-pallet').forEach(button => {
-            button.addEventListener('click', handleViewPallet);
-        });
-
-        const saveButton = document.getElementById('savePallet');
-        if (saveButton) {
-            saveButton.addEventListener('click', handleSavePallet);
-        }
+    // Initialize the page
+    initializeFilters();
+    
+    const saveButton = document.getElementById('savePallet');
+    if (saveButton) {
+        saveButton.addEventListener('click', handleSavePallet);
     }
-
-    // Initialize buttons
-    initializeButtons();
 
     // Initial filter
     if (filterElements.palletsList) {
