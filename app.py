@@ -21,9 +21,8 @@ db.init_app(app)
 with app.app_context():
     import models
     # Drop all tables with CASCADE
-    db.session.execute(db.text('DROP TABLE IF EXISTS inventory_transaction CASCADE'))
-    db.session.execute(db.text('DROP TABLE IF EXISTS pallet CASCADE'))
-    db.session.execute(db.text('DROP TABLE IF EXISTS company CASCADE'))
+    db.session.execute(db.text('DROP SCHEMA public CASCADE'))
+    db.session.execute(db.text('CREATE SCHEMA public'))
     db.session.commit()
     # Create all tables with new schema
     db.create_all()

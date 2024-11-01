@@ -14,6 +14,38 @@ document.addEventListener('DOMContentLoaded', function() {
         palletsList: document.getElementById('palletsList')
     };
 
+    // Form validation
+    function validateFormData(data) {
+        const errors = [];
+        
+        if (!data.name) errors.push('Palet adı gereklidir');
+        if (!data.company_id) errors.push('Firma seçimi gereklidir');
+        if (data.price < 0) errors.push('Fiyat 0\'dan küçük olamaz');
+        
+        // Validate dimensions
+        const dimensions = {
+            'Tahta kalınlığı': data.board_thickness,
+            'Üst tahta uzunluğu': data.upper_board_length,
+            'Üst tahta genişliği': data.upper_board_width,
+            'Üst tahta adedi': data.upper_board_quantity,
+            'Alt tahta uzunluğu': data.lower_board_length,
+            'Alt tahta genişliği': data.lower_board_width,
+            'Alt tahta adedi': data.lower_board_quantity,
+            'Kapatma uzunluğu': data.closure_length,
+            'Kapatma genişliği': data.closure_width,
+            'Kapatma adedi': data.closure_quantity,
+            'Takoz uzunluğu': data.block_length,
+            'Takoz genişliği': data.block_width,
+            'Takoz yüksekliği': data.block_height
+        };
+
+        Object.entries(dimensions).forEach(([name, value]) => {
+            if (!value || value <= 0) errors.push(`${name} 0'dan büyük olmalıdır`);
+        });
+        
+        return errors;
+    }
+
     // Desi calculation functions
     function calculateDesi(length, width, height, quantity = 1) {
         if (!length || !width || !height || !quantity) return 0;
@@ -107,6 +139,66 @@ document.addEventListener('DOMContentLoaded', function() {
             element.addEventListener('input', updateDesiCalculations);
         }
     });
+
+    // Save pallet handler
+    async function handleSavePallet() {
+        const palletId = document.getElementById('palletId')?.value;
+        const formElements = {
+            name: document.getElementById('palletName'),
+            company_id: document.getElementById('companySelect'),
+            price: document.getElementById('price'),
+            board_thickness: document.getElementById('boardThickness'),
+            upper_board_length: document.getElementById('upperBoardLength'),
+            upper_board_width: document.getElementById('upperBoardWidth'),
+            upper_board_quantity: document.getElementById('upperBoardQuantity'),
+            lower_board_length: document.getElementById('lowerBoardLength'),
+            lower_board_width: document.getElementById('lowerBoardWidth'),
+            lower_board_quantity: document.getElementById('lowerBoardQuantity'),
+            closure_length: document.getElementById('closureLength'),
+            closure_width: document.getElementById('closureWidth'),
+            closure_quantity: document.getElementById('closureQuantity'),
+            block_length: document.getElementById('blockLength'),
+            block_width: document.getElementById('blockWidth'),
+            block_height: document.getElementById('blockHeight')
+        };
+
+        const palletData = {};
+        Object.entries(formElements).forEach(([key, element]) => {
+            if (element) {
+                palletData[key] = ['price', 'board_thickness', 'upper_board_length', 'upper_board_width',
+                                 'lower_board_length', 'lower_board_width', 'closure_length', 'closure_width',
+                                 'block_length', 'block_width', 'block_height'].includes(key) ?
+                    parseFloat(element.value) :
+                    ['upper_board_quantity', 'lower_board_quantity', 'closure_quantity'].includes(key) ?
+                    parseInt(element.value) :
+                    element.value;
+            }
+        });
+
+        const errors = validateFormData(palletData);
+        if (errors.length > 0) {
+            alert('Lütfen aşağıdaki hataları düzeltin:\n\n' + errors.join('\n'));
+            return;
+        }
+
+        try {
+            const response = await fetch(palletId ? `/api/pallets/${palletId}` : '/api/pallets', {
+                method: palletId ? 'PUT' : 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(palletData)
+            });
+
+            if (response.ok) {
+                location.reload();
+            } else {
+                const errorData = await response.json();
+                alert(errorData.message || 'Palet kaydedilirken bir hata oluştu');
+            }
+        } catch (error) {
+            console.error('Hata:', error);
+            alert('İşlem sırasında bir hata oluştu');
+        }
+    }
 
     // Filtering and sorting function
     function filterAndSortPallets() {
