@@ -3,6 +3,75 @@ document.addEventListener('DOMContentLoaded', function() {
     const palletForm = document.getElementById('palletForm');
     const saveButton = document.getElementById('savePallet');
 
+    // Filter elements
+    const searchName = document.getElementById('searchName');
+    const filterCompany = document.getElementById('filterCompany');
+    const minPrice = document.getElementById('minPrice');
+    const maxPrice = document.getElementById('maxPrice');
+    const sortOrder = document.getElementById('sortOrder');
+    const noResults = document.getElementById('noResults');
+
+    // Filtering and sorting function
+    function filterAndSortPallets() {
+        const rows = Array.from(document.querySelectorAll('#palletsList tr'));
+        const searchText = searchName.value.toLowerCase();
+        const companyId = filterCompany.value;
+        const minPriceValue = parseFloat(minPrice.value) || 0;
+        const maxPriceValue = parseFloat(maxPrice.value) || Infinity;
+        const [sortKey, sortDir] = sortOrder.value.split('_');
+
+        let visibleRows = rows.filter(row => {
+            const name = row.children[0].textContent.toLowerCase();
+            const rowCompanyId = row.dataset.companyId;
+            const price = parseFloat(row.dataset.price);
+
+            return name.includes(searchText) &&
+                   (!companyId || rowCompanyId === companyId) &&
+                   price >= minPriceValue &&
+                   price <= maxPriceValue;
+        });
+
+        // Sorting
+        visibleRows.sort((a, b) => {
+            let aValue, bValue;
+            
+            switch(sortKey) {
+                case 'name':
+                    aValue = a.children[0].textContent.toLowerCase();
+                    bValue = b.children[0].textContent.toLowerCase();
+                    break;
+                case 'price':
+                    aValue = parseFloat(a.dataset.price);
+                    bValue = parseFloat(b.dataset.price);
+                    break;
+                case 'volume':
+                    aValue = parseFloat(a.dataset.volume);
+                    bValue = parseFloat(b.dataset.volume);
+                    break;
+            }
+
+            if (sortDir === 'asc') {
+                return aValue > bValue ? 1 : -1;
+            } else {
+                return aValue < bValue ? 1 : -1;
+            }
+        });
+
+        // Update visibility
+        const tbody = document.getElementById('palletsList');
+        tbody.innerHTML = '';
+        visibleRows.forEach(row => tbody.appendChild(row));
+
+        // Show/hide no results message
+        noResults.classList.toggle('d-none', visibleRows.length > 0);
+    }
+
+    // Add event listeners for filters
+    [searchName, filterCompany, minPrice, maxPrice, sortOrder].forEach(element => {
+        element.addEventListener('input', filterAndSortPallets);
+        element.addEventListener('change', filterAndSortPallets);
+    });
+
     // Add/Edit Pallet
     saveButton.addEventListener('click', async () => {
         const palletId = document.getElementById('palletId').value;
@@ -50,7 +119,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Edit Pallet
     document.querySelectorAll('.edit-pallet').forEach(button => {
         button.addEventListener('click', async (e) => {
-            const palletId = e.target.dataset.id;
+            const palletId = e.currentTarget.dataset.id;
             const response = await fetch(`/api/pallets/${palletId}`);
             const pallet = await response.json();
 
@@ -73,9 +142,7 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('blockWidth').value = pallet.block_width;
             document.getElementById('blockHeight').value = pallet.block_height;
 
-            // Update desi calculations
             updateDesiCalculations();
-
             palletModal.show();
         });
     });
@@ -84,7 +151,7 @@ document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('.delete-pallet').forEach(button => {
         button.addEventListener('click', async (e) => {
             if (confirm('Bu paleti silmek istediğinizden emin misiniz?')) {
-                const palletId = e.target.dataset.id;
+                const palletId = e.currentTarget.dataset.id;
                 
                 try {
                     const response = await fetch(`/api/pallets/${palletId}`, {
@@ -105,8 +172,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // View Pallet Details
     document.querySelectorAll('.view-pallet').forEach(button => {
-        button.addEventListener('click', async (e) => {
-            const palletId = e.target.dataset.id;
+        button.addEventListener('click', (e) => {
+            const palletId = e.currentTarget.dataset.id;
             window.location.href = `/pallets/${palletId}`;
         });
     });

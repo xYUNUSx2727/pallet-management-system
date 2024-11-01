@@ -18,6 +18,48 @@
     </div>
 </div>
 
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="card-title mb-0">Filtreler</h5>
+    </div>
+    <div class="card-body">
+        <div class="row g-3">
+            <div class="col-md-3">
+                <label class="form-label">Palet Adı</label>
+                <input type="text" class="form-control" id="searchName" placeholder="Palet adı ara...">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Firma</label>
+                <select class="form-select" id="filterCompany">
+                    <option value="">Tüm Firmalar</option>
+                    {% for company in companies %}
+                    <option value="{{ company.id }}">{{ company.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Fiyat Aralığı</label>
+                <div class="input-group">
+                    <input type="number" class="form-control" id="minPrice" placeholder="Min">
+                    <span class="input-group-text">-</span>
+                    <input type="number" class="form-control" id="maxPrice" placeholder="Max">
+                </div>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Sıralama</label>
+                <select class="form-select" id="sortOrder">
+                    <option value="name_asc">İsim (A-Z)</option>
+                    <option value="name_desc">İsim (Z-A)</option>
+                    <option value="price_asc">Fiyat (Düşük-Yüksek)</option>
+                    <option value="price_desc">Fiyat (Yüksek-Düşük)</option>
+                    <option value="volume_asc">Hacim (Düşük-Yüksek)</option>
+                    <option value="volume_desc">Hacim (Yüksek-Düşük)</option>
+                </select>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="table-responsive">
     <table class="table">
         <thead>
@@ -31,21 +73,26 @@
         </thead>
         <tbody id="palletsList">
             {% for pallet in pallets %}
-            <tr>
+            <tr data-pallet-id="{{ pallet.id }}" 
+                data-company-id="{{ pallet.company_id }}"
+                data-price="{{ pallet.price }}"
+                data-volume="{{ pallet.total_volume }}">
                 <td>{{ pallet.name }}</td>
                 <td>{{ pallet.company.name }}</td>
                 <td>{{ "%.2f"|format(pallet.price) }}</td>
                 <td>{{ pallet.total_volume }}</td>
                 <td>
-                    <button class="btn btn-sm btn-info view-pallet" data-id="{{ pallet.id }}">
-                        <i class="fas fa-eye me-1"></i>Görüntüle
-                    </button>
-                    <button class="btn btn-sm btn-secondary edit-pallet" data-id="{{ pallet.id }}">
-                        <i class="fas fa-edit me-1"></i>Düzenle
-                    </button>
-                    <button class="btn btn-sm btn-danger delete-pallet" data-id="{{ pallet.id }}">
-                        <i class="fas fa-trash me-1"></i>Sil
-                    </button>
+                    <div class="btn-group">
+                        <button class="btn btn-sm btn-info view-pallet" data-id="{{ pallet.id }}">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        <button class="btn btn-sm btn-secondary edit-pallet" data-id="{{ pallet.id }}">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn btn-sm btn-danger delete-pallet" data-id="{{ pallet.id }}">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
                 </td>
             </tr>
             {% endfor %}
@@ -53,7 +100,12 @@
     </table>
 </div>
 
-<!-- Palet Modal -->
+<!-- No Results Message -->
+<div id="noResults" class="alert alert-info d-none text-center">
+    <i class="fas fa-info-circle me-2"></i>Arama kriterlerinize uygun palet bulunamadı.
+</div>
+
+<!-- Pallet Modal -->
 <div class="modal fade" id="palletModal" tabindex="-1">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
