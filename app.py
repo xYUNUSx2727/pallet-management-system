@@ -20,11 +20,7 @@ db.init_app(app)
 
 with app.app_context():
     import models
-    # Drop all tables with CASCADE
-    db.session.execute(db.text('DROP SCHEMA public CASCADE'))
-    db.session.execute(db.text('CREATE SCHEMA public'))
-    db.session.commit()
-    # Create all tables with new schema
+    # Create tables if they don't exist
     db.create_all()
 
 from routes import *

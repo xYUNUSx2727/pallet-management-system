@@ -23,6 +23,10 @@ args = "web"
 task = "workflow.run"
 args = "seed"
 
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Flask Server"
+
 [[workflows.workflow]]
 name = "database"
 author = "agent"
@@ -65,6 +69,21 @@ task = "packager.installForAll"
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "python seed_data.py"
+
+[[workflows.workflow]]
+name = "Flask Server"
+author = "agent"
+
+[workflows.workflow.metadata]
+agentRequireRestartOnSave = false
+
+[[workflows.workflow.tasks]]
+task = "packager.installForAll"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "python main.py"
+waitForPort = 5000
 
 [deployment]
 run = ["sh", "-c", "pg_ctl start"]
