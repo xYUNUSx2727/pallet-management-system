@@ -1,3 +1,32 @@
+// Define the filtering function first
+const filterAndSortPallets = function() {
+    const searchTerm = filterElements.searchName?.value.toLowerCase() || '';
+    const companyId = filterElements.filterCompany?.value || '';
+    const minPrice = parseFloat(filterElements.minPrice?.value) || 0;
+    const maxPrice = parseFloat(filterElements.maxPrice?.value) || Infinity;
+    const sortOrder = filterElements.sortOrder?.value || 'name_asc';
+
+    const items = document.querySelectorAll('tr[data-company-id], .accordion-item');
+    let visibleCount = 0;
+
+    items.forEach(item => {
+        const companyMatch = !companyId || item.dataset.companyId === companyId;
+        const price = parseFloat(item.dataset.price);
+        const priceMatch = price >= minPrice && (maxPrice === Infinity || price <= maxPrice);
+        const nameMatch = item.querySelector('td:first-child, .accordion-button')
+            ?.textContent.toLowerCase().includes(searchTerm);
+
+        if (companyMatch && priceMatch && nameMatch) {
+            item.style.display = '';
+            visibleCount++;
+        } else {
+            item.style.display = 'none';
+        }
+    });
+
+    filterElements.noResults.classList.toggle('d-none', visibleCount > 0);
+};
+
 document.addEventListener('DOMContentLoaded', function() {
     // Filter elements with null checks
     const filterElements = {
@@ -11,6 +40,16 @@ document.addEventListener('DOMContentLoaded', function() {
         palletsAccordion: document.getElementById('palletsAccordion')
     };
 
+    // Add filter event listeners right after filterElements definition
+    Object.values(filterElements).forEach(element => {
+        if (element && element.id !== 'noResults' && element.id !== 'palletsList') {
+            element.addEventListener('change', filterAndSortPallets);
+            if (element.tagName === 'INPUT') {
+                element.addEventListener('keyup', filterAndSortPallets);
+            }
+        }
+    });
+
     // Initialize Bootstrap components
     const palletModal = document.getElementById('palletModal') ? 
         new bootstrap.Modal(document.getElementById('palletModal')) : null;
@@ -23,83 +62,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 new bootstrap.Collapse(target);
             }
         });
-    });
-
-    // Filtering and sorting function
-    function filterAndSortPallets() {
-        const searchTerm = filterElements.searchName?.value.toLowerCase() || '';
-        const companyId = filterElements.filterCompany?.value || '';
-        const minPrice = parseFloat(filterElements.minPrice?.value) || 0;
-        const maxPrice = parseFloat(filterElements.maxPrice?.value) || Infinity;
-        const [sortKey, sortDir] = (filterElements.sortOrder?.value || 'name_asc').split('_');
-
-        const items = Array.from(document.querySelectorAll('tr[data-company-id], .accordion-item'));
-        let visibleCount = 0;
-
-        // Filter items
-        const filteredItems = items.filter(item => {
-            const companyMatch = !companyId || item.dataset.companyId === companyId;
-            const price = parseFloat(item.dataset.price);
-            const priceMatch = price >= minPrice && (maxPrice === Infinity || price <= maxPrice);
-            const nameMatch = item.querySelector('td:first-child, .accordion-button')
-                ?.textContent.toLowerCase().includes(searchTerm);
-
-            const visible = companyMatch && priceMatch && nameMatch;
-            if (visible) visibleCount++;
-            return visible;
-        });
-
-        // Sort items
-        filteredItems.sort((a, b) => {
-            let aValue, bValue;
-            
-            switch(sortKey) {
-                case 'name':
-                    aValue = a.querySelector('td:first-child, .accordion-button')?.textContent.toLowerCase();
-                    bValue = b.querySelector('td:first-child, .accordion-button')?.textContent.toLowerCase();
-                    break;
-                case 'price':
-                    aValue = parseFloat(a.dataset.price);
-                    bValue = parseFloat(b.dataset.price);
-                    break;
-                case 'volume':
-                    aValue = parseFloat(a.dataset.volume) || 0;
-                    bValue = parseFloat(b.dataset.volume) || 0;
-                    break;
-                default:
-                    aValue = a.querySelector('td:first-child, .accordion-button')?.textContent.toLowerCase();
-                    bValue = b.querySelector('td:first-child, .accordion-button')?.textContent.toLowerCase();
-            }
-
-            return sortDir === 'asc' ? 
-                (aValue < bValue ? -1 : aValue > bValue ? 1 : 0) :
-                (aValue > bValue ? -1 : aValue < bValue ? 1 : 0);
-        });
-
-        // Update visibility and order
-        items.forEach(item => item.style.display = 'none');
-        filteredItems.forEach((item, index) => {
-            item.style.display = '';
-            const parent = item.parentElement;
-            if (parent) {
-                parent.appendChild(item);
-            }
-        });
-
-        // Update no results message
-        if (filterElements.noResults) {
-            filterElements.noResults.classList.toggle('d-none', visibleCount > 0);
-        }
-    }
-
-    // Add event listeners for filters
-    Object.values(filterElements).forEach(element => {
-        if (element && element.id !== 'noResults' && element.id !== 'palletsList') {
-            element.addEventListener('change', filterAndSortPallets);
-            if (element.tagName === 'INPUT') {
-                element.addEventListener('keyup', filterAndSortPallets);
-            }
-        }
     });
 
     // Save pallet handler
