@@ -66,11 +66,33 @@ document.addEventListener('DOMContentLoaded', function() {
         noResults.classList.toggle('d-none', visibleRows.length > 0);
     }
 
-    // Add event listeners for filters
+    // Add event listeners for filters if elements exist
     [searchName, filterCompany, minPrice, maxPrice, sortOrder].forEach(element => {
-        element.addEventListener('input', filterAndSortPallets);
-        element.addEventListener('change', filterAndSortPallets);
+        if (element) {
+            element.addEventListener('input', filterAndSortPallets);
+            element.addEventListener('change', filterAndSortPallets);
+        }
     });
+
+    // Form validation
+    function validateFormData(data) {
+        const errors = [];
+        
+        if (!data.name) errors.push('Palet adı gereklidir');
+        if (!data.company_id) errors.push('Firma seçimi gereklidir');
+        if (data.price < 0) errors.push('Fiyat 0\'dan küçük olamaz');
+        
+        // Validate dimensions (all must be positive)
+        if (data.board_thickness <= 0) errors.push('Tahta kalınlığı 0\'dan büyük olmalıdır');
+        if (data.upper_board_length <= 0) errors.push('Üst tahta uzunluğu 0\'dan büyük olmalıdır');
+        if (data.upper_board_width <= 0) errors.push('Üst tahta genişliği 0\'dan büyük olmalıdır');
+        if (data.upper_board_quantity <= 0) errors.push('Üst tahta adedi 0\'dan büyük olmalıdır');
+        if (data.lower_board_length <= 0) errors.push('Alt tahta uzunluğu 0\'dan büyük olmalıdır');
+        if (data.lower_board_width <= 0) errors.push('Alt tahta genişliği 0\'dan büyük olmalıdır');
+        if (data.lower_board_quantity <= 0) errors.push('Alt tahta adedi 0\'dan büyük olmalıdır');
+        
+        return errors;
+    }
 
     // Add/Edit Pallet
     saveButton.addEventListener('click', async () => {
@@ -78,7 +100,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const palletData = {
             name: document.getElementById('palletName').value,
             company_id: document.getElementById('companySelect').value,
-            price: parseFloat(document.getElementById('price').value),
+            price: parseFloat(document.getElementById('price').value) || 0,
             board_thickness: parseFloat(document.getElementById('boardThickness').value),
             upper_board_length: parseFloat(document.getElementById('upperBoardLength').value),
             upper_board_width: parseFloat(document.getElementById('upperBoardWidth').value),
@@ -93,6 +115,13 @@ document.addEventListener('DOMContentLoaded', function() {
             block_width: parseFloat(document.getElementById('blockWidth').value),
             block_height: parseFloat(document.getElementById('blockHeight').value)
         };
+
+        // Validate form data
+        const errors = validateFormData(palletData);
+        if (errors.length > 0) {
+            alert('Lütfen aşağıdaki hataları düzeltin:\n\n' + errors.join('\n'));
+            return;
+        }
 
         const url = palletId ? `/api/pallets/${palletId}` : '/api/pallets';
         const method = palletId ? 'PUT' : 'POST';
@@ -109,10 +138,81 @@ document.addEventListener('DOMContentLoaded', function() {
             if (response.ok) {
                 location.reload();
             } else {
-                alert('Palet kaydedilirken bir hata oluştu');
+                const errorData = await response.json();
+                alert(errorData.message || 'Palet kaydedilirken bir hata oluştu');
             }
         } catch (error) {
             console.error('Hata:', error);
+            alert('İşlem sırasında bir hata oluştu. Lütfen tekrar deneyin.');
+        }
+    });
+
+    // Calculate desi values
+    function calculateDesi(length, width, height, quantity = 1) {
+        if (!length || !width || !height || !quantity) return 0;
+        return ((length * width * height * quantity) / 1000).toFixed(2);
+    }
+
+    function updateDesiCalculations() {
+        try {
+            const thickness = parseFloat(document.getElementById('boardThickness').value) || 0;
+
+            // Upper boards
+            const upperLength = parseFloat(document.getElementById('upperBoardLength').value) || 0;
+            const upperWidth = parseFloat(document.getElementById('upperBoardWidth').value) || 0;
+            const upperQuantity = parseInt(document.getElementById('upperBoardQuantity').value) || 0;
+            const upperDesi = calculateDesi(upperLength, upperWidth, thickness, upperQuantity);
+            const upperDesiElement = document.getElementById('upperBoardDesi');
+            if (upperDesiElement) upperDesiElement.textContent = upperDesi;
+
+            // Lower boards
+            const lowerLength = parseFloat(document.getElementById('lowerBoardLength').value) || 0;
+            const lowerWidth = parseFloat(document.getElementById('lowerBoardWidth').value) || 0;
+            const lowerQuantity = parseInt(document.getElementById('lowerBoardQuantity').value) || 0;
+            const lowerDesi = calculateDesi(lowerLength, lowerWidth, thickness, lowerQuantity);
+            const lowerDesiElement = document.getElementById('lowerBoardDesi');
+            if (lowerDesiElement) lowerDesiElement.textContent = lowerDesi;
+
+            // Closure boards
+            const closureLength = parseFloat(document.getElementById('closureLength').value) || 0;
+            const closureWidth = parseFloat(document.getElementById('closureWidth').value) || 0;
+            const closureQuantity = parseInt(document.getElementById('closureQuantity').value) || 0;
+            const closureDesi = calculateDesi(closureLength, closureWidth, thickness, closureQuantity);
+            const closureDesiElement = document.getElementById('closureDesi');
+            if (closureDesiElement) closureDesiElement.textContent = closureDesi;
+
+            // Blocks (fixed 9 quantity)
+            const blockLength = parseFloat(document.getElementById('blockLength').value) || 0;
+            const blockWidth = parseFloat(document.getElementById('blockWidth').value) || 0;
+            const blockHeight = parseFloat(document.getElementById('blockHeight').value) || 0;
+            const blockDesi = calculateDesi(blockLength, blockWidth, blockHeight, 9);
+            const blockDesiElement = document.getElementById('blockDesi');
+            if (blockDesiElement) blockDesiElement.textContent = blockDesi;
+        } catch (error) {
+            console.error('Desi hesaplama hatası:', error);
+        }
+    }
+
+    // Add event listeners for real-time desi calculations
+    const dimensionInputs = [
+        'boardThickness', 'upperBoardLength', 'upperBoardWidth', 'upperBoardQuantity',
+        'lowerBoardLength', 'lowerBoardWidth', 'lowerBoardQuantity',
+        'closureLength', 'closureWidth', 'closureQuantity',
+        'blockLength', 'blockWidth', 'blockHeight'
+    ];
+
+    dimensionInputs.forEach(inputId => {
+        const element = document.getElementById(inputId);
+        if (element) {
+            element.addEventListener('input', updateDesiCalculations);
+        }
+    });
+
+    // Add placeholder text to all dimension inputs
+    dimensionInputs.forEach(inputId => {
+        const element = document.getElementById(inputId);
+        if (element) {
+            element.placeholder = 'cm';
         }
     });
 
@@ -120,30 +220,39 @@ document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('.edit-pallet').forEach(button => {
         button.addEventListener('click', async (e) => {
             const palletId = e.currentTarget.dataset.id;
-            const response = await fetch(`/api/pallets/${palletId}`);
-            const pallet = await response.json();
+            try {
+                const response = await fetch(`/api/pallets/${palletId}`);
+                if (!response.ok) {
+                    throw new Error('Palet bilgileri alınamadı');
+                }
+                const pallet = await response.json();
 
-            document.getElementById('palletId').value = pallet.id;
-            document.getElementById('palletName').value = pallet.name;
-            document.getElementById('companySelect').value = pallet.company_id;
-            document.getElementById('price').value = pallet.price;
-            
-            document.getElementById('boardThickness').value = pallet.board_thickness;
-            document.getElementById('upperBoardLength').value = pallet.upper_board_length;
-            document.getElementById('upperBoardWidth').value = pallet.upper_board_width;
-            document.getElementById('upperBoardQuantity').value = pallet.upper_board_quantity;
-            document.getElementById('lowerBoardLength').value = pallet.lower_board_length;
-            document.getElementById('lowerBoardWidth').value = pallet.lower_board_width;
-            document.getElementById('lowerBoardQuantity').value = pallet.lower_board_quantity;
-            document.getElementById('closureLength').value = pallet.closure_length;
-            document.getElementById('closureWidth').value = pallet.closure_width;
-            document.getElementById('closureQuantity').value = pallet.closure_quantity;
-            document.getElementById('blockLength').value = pallet.block_length;
-            document.getElementById('blockWidth').value = pallet.block_width;
-            document.getElementById('blockHeight').value = pallet.block_height;
+                // Fill form fields
+                document.getElementById('palletId').value = pallet.id;
+                document.getElementById('palletName').value = pallet.name;
+                document.getElementById('companySelect').value = pallet.company_id;
+                document.getElementById('price').value = pallet.price;
+                
+                document.getElementById('boardThickness').value = pallet.board_thickness;
+                document.getElementById('upperBoardLength').value = pallet.upper_board_length;
+                document.getElementById('upperBoardWidth').value = pallet.upper_board_width;
+                document.getElementById('upperBoardQuantity').value = pallet.upper_board_quantity;
+                document.getElementById('lowerBoardLength').value = pallet.lower_board_length;
+                document.getElementById('lowerBoardWidth').value = pallet.lower_board_width;
+                document.getElementById('lowerBoardQuantity').value = pallet.lower_board_quantity;
+                document.getElementById('closureLength').value = pallet.closure_length;
+                document.getElementById('closureWidth').value = pallet.closure_width;
+                document.getElementById('closureQuantity').value = pallet.closure_quantity;
+                document.getElementById('blockLength').value = pallet.block_length;
+                document.getElementById('blockWidth').value = pallet.block_width;
+                document.getElementById('blockHeight').value = pallet.block_height;
 
-            updateDesiCalculations();
-            palletModal.show();
+                updateDesiCalculations();
+                palletModal.show();
+            } catch (error) {
+                console.error('Hata:', error);
+                alert('Palet bilgileri yüklenirken bir hata oluştu');
+            }
         });
     });
 
@@ -161,10 +270,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (response.ok) {
                         location.reload();
                     } else {
-                        alert('Palet silinirken bir hata oluştu');
+                        const errorData = await response.json();
+                        alert(errorData.message || 'Palet silinirken bir hata oluştu');
                     }
                 } catch (error) {
                     console.error('Hata:', error);
+                    alert('İşlem sırasında bir hata oluştu');
                 }
             }
         });
@@ -178,52 +289,8 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Calculate desi values
-    function calculateDesi(length, width, height, quantity = 1) {
-        return ((length * width * height * quantity) / 1000).toFixed(2);
+    // Initialize desi calculations for edit mode
+    if (document.getElementById('palletModal').classList.contains('show')) {
+        updateDesiCalculations();
     }
-
-    function updateDesiCalculations() {
-        const thickness = parseFloat(document.getElementById('boardThickness').value) || 0;
-
-        // Upper boards
-        const upperLength = parseFloat(document.getElementById('upperBoardLength').value) || 0;
-        const upperWidth = parseFloat(document.getElementById('upperBoardWidth').value) || 0;
-        const upperQuantity = parseInt(document.getElementById('upperBoardQuantity').value) || 0;
-        document.getElementById('upperBoardDesi').textContent = 
-            calculateDesi(upperLength, upperWidth, thickness, upperQuantity);
-
-        // Lower boards
-        const lowerLength = parseFloat(document.getElementById('lowerBoardLength').value) || 0;
-        const lowerWidth = parseFloat(document.getElementById('lowerBoardWidth').value) || 0;
-        const lowerQuantity = parseInt(document.getElementById('lowerBoardQuantity').value) || 0;
-        document.getElementById('lowerBoardDesi').textContent = 
-            calculateDesi(lowerLength, lowerWidth, thickness, lowerQuantity);
-
-        // Closure boards
-        const closureLength = parseFloat(document.getElementById('closureLength').value) || 0;
-        const closureWidth = parseFloat(document.getElementById('closureWidth').value) || 0;
-        const closureQuantity = parseInt(document.getElementById('closureQuantity').value) || 0;
-        document.getElementById('closureDesi').textContent = 
-            calculateDesi(closureLength, closureWidth, thickness, closureQuantity);
-
-        // Blocks (fixed 9 quantity)
-        const blockLength = parseFloat(document.getElementById('blockLength').value) || 0;
-        const blockWidth = parseFloat(document.getElementById('blockWidth').value) || 0;
-        const blockHeight = parseFloat(document.getElementById('blockHeight').value) || 0;
-        document.getElementById('blockDesi').textContent = 
-            calculateDesi(blockLength, blockWidth, blockHeight, 9);
-    }
-
-    // Add event listeners for real-time desi calculations
-    const dimensionInputs = [
-        'boardThickness', 'upperBoardLength', 'upperBoardWidth', 'upperBoardQuantity',
-        'lowerBoardLength', 'lowerBoardWidth', 'lowerBoardQuantity',
-        'closureLength', 'closureWidth', 'closureQuantity',
-        'blockLength', 'blockWidth', 'blockHeight'
-    ];
-
-    dimensionInputs.forEach(inputId => {
-        document.getElementById(inputId).addEventListener('input', updateDesiCalculations);
-    });
 });
