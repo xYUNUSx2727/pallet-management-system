@@ -92,33 +92,37 @@
                 <td>{{ "%.2f"|format(pallet.price) }}</td>
                 <td>{{ pallet.total_volume }}</td>
                 <td class="pallet-dimensions">
-                    <div class="dimensions-group">
-                        <span class="dimension-label">Üst:</span>
-                        <span>{{ pallet.upper_board_length }}x{{ pallet.upper_board_width }}x{{ pallet.upper_board_quantity }}</span>
+                    <div class="dimensions-group mb-2">
+                        <strong class="dimension-label d-block mb-1">Üst Tahta:</strong>
+                        <span>{{ pallet.upper_board_length }} cm x {{ pallet.upper_board_width }} cm x {{ pallet.board_thickness }} cm</span>
+                        <small class="text-muted d-block">{{ pallet.upper_board_quantity }} adet</small>
+                    </div>
+                    <div class="dimensions-group mb-2">
+                        <strong class="dimension-label d-block mb-1">Alt Tahta:</strong>
+                        <span>{{ pallet.lower_board_length }} cm x {{ pallet.lower_board_width }} cm x {{ pallet.board_thickness }} cm</span>
+                        <small class="text-muted d-block">{{ pallet.lower_board_quantity }} adet</small>
+                    </div>
+                    <div class="dimensions-group mb-2">
+                        <strong class="dimension-label d-block mb-1">Kapatma:</strong>
+                        <span>{{ pallet.closure_length }} cm x {{ pallet.closure_width }} cm x {{ pallet.board_thickness }} cm</span>
+                        <small class="text-muted d-block">{{ pallet.closure_quantity }} adet</small>
                     </div>
                     <div class="dimensions-group">
-                        <span class="dimension-label">Alt:</span>
-                        <span>{{ pallet.lower_board_length }}x{{ pallet.lower_board_width }}x{{ pallet.lower_board_quantity }}</span>
-                    </div>
-                    <div class="dimensions-group">
-                        <span class="dimension-label">Kapatma:</span>
-                        <span>{{ pallet.closure_length }}x{{ pallet.closure_width }}x{{ pallet.closure_quantity }}</span>
-                    </div>
-                    <div class="dimensions-group">
-                        <span class="dimension-label">Takoz:</span>
-                        <span>{{ pallet.block_length }}x{{ pallet.block_width }}x{{ pallet.block_height }}</span>
+                        <strong class="dimension-label d-block mb-1">Takoz:</strong>
+                        <span>{{ pallet.block_length }} cm x {{ pallet.block_width }} cm x {{ pallet.block_height }} cm</span>
+                        <small class="text-muted d-block">9 adet</small>
                     </div>
                 </td>
                 <td>
-                    <div class="btn-group">
-                        <button class="btn btn-sm btn-info view-pallet" data-id="{{ pallet.id }}" title="Görüntüle">
-                            <i class="fas fa-eye"></i>
+                    <div class="btn-group-vertical w-100">
+                        <button class="btn btn-info view-pallet mb-1" data-id="{{ pallet.id }}">
+                            <i class="fas fa-eye me-2"></i>Görüntüle
                         </button>
-                        <button class="btn btn-sm btn-secondary edit-pallet" data-id="{{ pallet.id }}" title="Düzenle">
-                            <i class="fas fa-edit"></i>
+                        <button class="btn btn-secondary edit-pallet mb-1" data-id="{{ pallet.id }}">
+                            <i class="fas fa-edit me-2"></i>Düzenle
                         </button>
-                        <button class="btn btn-sm btn-danger delete-pallet" data-id="{{ pallet.id }}" title="Sil">
-                            <i class="fas fa-trash"></i>
+                        <button class="btn btn-danger delete-pallet" data-id="{{ pallet.id }}">
+                            <i class="fas fa-trash me-2"></i>Sil
                         </button>
                     </div>
                 </td>
@@ -154,45 +158,38 @@
                 </div>
                 
                 <div class="dimensions-section">
-                    <h6>Üst Tahta</h6>
-                    <div class="dimensions-info">
-                        <div>Uzunluk: {{ pallet.upper_board_length }} cm</div>
-                        <div>Genişlik: {{ pallet.upper_board_width }} cm</div>
-                        <div>Adet: {{ pallet.upper_board_quantity }}</div>
+                    <div class="dimensions-group mb-2">
+                        <strong class="dimension-label d-block mb-1">Üst Tahta:</strong>
+                        <span>{{ pallet.upper_board_length }} cm x {{ pallet.upper_board_width }} cm x {{ pallet.board_thickness }} cm</span>
+                        <small class="text-muted d-block">{{ pallet.upper_board_quantity }} adet</small>
                     </div>
-
-                    <h6>Alt Tahta</h6>
-                    <div class="dimensions-info">
-                        <div>Uzunluk: {{ pallet.lower_board_length }} cm</div>
-                        <div>Genişlik: {{ pallet.lower_board_width }} cm</div>
-                        <div>Adet: {{ pallet.lower_board_quantity }}</div>
+                    <div class="dimensions-group mb-2">
+                        <strong class="dimension-label d-block mb-1">Alt Tahta:</strong>
+                        <span>{{ pallet.lower_board_length }} cm x {{ pallet.lower_board_width }} cm x {{ pallet.board_thickness }} cm</span>
+                        <small class="text-muted d-block">{{ pallet.lower_board_quantity }} adet</small>
                     </div>
-
-                    <h6>Kapatma</h6>
-                    <div class="dimensions-info">
-                        <div>Uzunluk: {{ pallet.closure_length }} cm</div>
-                        <div>Genişlik: {{ pallet.closure_width }} cm</div>
-                        <div>Adet: {{ pallet.closure_quantity }}</div>
+                    <div class="dimensions-group mb-2">
+                        <strong class="dimension-label d-block mb-1">Kapatma:</strong>
+                        <span>{{ pallet.closure_length }} cm x {{ pallet.closure_width }} cm x {{ pallet.board_thickness }} cm</span>
+                        <small class="text-muted d-block">{{ pallet.closure_quantity }} adet</small>
                     </div>
-
-                    <h6>Takoz (9 adet)</h6>
-                    <div class="dimensions-info">
-                        <div>Uzunluk: {{ pallet.block_length }} cm</div>
-                        <div>Genişlik: {{ pallet.block_width }} cm</div>
-                        <div>Yükseklik: {{ pallet.block_height }} cm</div>
+                    <div class="dimensions-group">
+                        <strong class="dimension-label d-block mb-1">Takoz:</strong>
+                        <span>{{ pallet.block_length }} cm x {{ pallet.block_width }} cm x {{ pallet.block_height }} cm</span>
+                        <small class="text-muted d-block">9 adet</small>
                     </div>
                 </div>
 
                 <div class="actions mt-3">
-                    <div class="btn-group w-100">
-                        <button class="btn btn-info view-pallet" data-id="{{ pallet.id }}">
-                            <i class="fas fa-eye me-1"></i>Görüntüle
+                    <div class="btn-group-vertical w-100">
+                        <button class="btn btn-info view-pallet mb-1" data-id="{{ pallet.id }}">
+                            <i class="fas fa-eye me-2"></i>Görüntüle
                         </button>
-                        <button class="btn btn-secondary edit-pallet" data-id="{{ pallet.id }}">
-                            <i class="fas fa-edit me-1"></i>Düzenle
+                        <button class="btn btn-secondary edit-pallet mb-1" data-id="{{ pallet.id }}">
+                            <i class="fas fa-edit me-2"></i>Düzenle
                         </button>
                         <button class="btn btn-danger delete-pallet" data-id="{{ pallet.id }}">
-                            <i class="fas fa-trash me-1"></i>Sil
+                            <i class="fas fa-trash me-2"></i>Sil
                         </button>
                     </div>
                 </div>
