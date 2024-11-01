@@ -103,62 +103,64 @@ body {
 
 /* Dimensions Styles */
 .dimensions-group {
-    background: rgba(52, 152, 219, 0.1);
-    padding: 0.75rem;
-    border-radius: 0.5rem;
-    margin-bottom: 0.75rem;
+    background: rgba(52, 152, 219, 0.1) !important;
+    padding: 0.75rem !important;
+    border-radius: 0.5rem !important;
+    margin-bottom: 0.75rem !important;
 }
 
 .dimensions-group:last-child {
-    margin-bottom: 0;
+    margin-bottom: 0 !important;
 }
 
 .dimension-label {
-    min-width: 120px;
-    display: inline-block;
-    position: relative;
-    color: var(--bs-info);
-    font-size: 0.9rem;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
+    min-width: 120px !important;
+    display: inline-block !important;
+    position: relative !important;
+    color: var(--bs-info) !important;
+    font-size: 0.9rem !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
 }
 
 .dimension-label::after {
-    content: ':';
-    position: absolute;
-    right: 10px;
+    content: ':' !important;
+    position: absolute !important;
+    right: 10px !important;
 }
 
 .measurements {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 0.5rem !important;
 }
 
 .measurements span {
-    padding-left: 1rem;
+    padding-left: 1rem !important;
 }
 
 /* Button Group Styles */
 .btn-group-vertical {
-    display: flex;
-    flex-direction: column;
-    width: 100%;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    width: 100% !important;
 }
 
 .btn-group-vertical .btn {
-    margin-bottom: 0.5rem;
-    text-align: left;
-    padding: 0.5rem 1rem;
+    width: 100% !important;
+    margin-bottom: 0.5rem !important;
+    text-align: left !important;
+    padding: 0.5rem 1rem !important;
 }
 
 .btn-group-vertical .btn:last-child {
-    margin-bottom: 0;
+    margin-bottom: 0 !important;
 }
 
 .btn-group-vertical .btn i {
-    width: 20px;
-    text-align: center;
+    width: 20px !important;
+    text-align: center !important;
 }
 
 /* Enhanced Accordion Styles */

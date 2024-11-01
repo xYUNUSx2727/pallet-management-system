@@ -1,4 +1,7 @@
-// Define the filtering function first
+// Initialize filterElements globally
+let filterElements;
+
+// Define the filtering function
 const filterAndSortPallets = function() {
     const searchTerm = filterElements.searchName?.value.toLowerCase() || '';
     const companyId = filterElements.filterCompany?.value || '';
@@ -62,8 +65,8 @@ function calculateDesi() {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-    // Filter elements with null checks
-    window.filterElements = {
+    // Initialize filter elements with null checks
+    filterElements = {
         searchName: document.getElementById('searchName'),
         filterCompany: document.getElementById('filterCompany'),
         minPrice: document.getElementById('minPrice'),
@@ -84,7 +87,7 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById(id)?.addEventListener('input', calculateDesi);
     });
 
-    // Add filter event listeners right after filterElements definition
+    // Add filter event listeners
     Object.values(filterElements).forEach(element => {
         if (element && element.id !== 'noResults' && element.id !== 'palletsList') {
             element.addEventListener('change', filterAndSortPallets);
