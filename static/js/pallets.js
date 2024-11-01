@@ -67,8 +67,9 @@ const filterAndSortPallets = function() {
     }
 
     // Show/hide no results message
-    if (filterElements.noResults) {
-        filterElements.noResults.classList.toggle('d-none', visibleCount > 0);
+    const noResultsElement = document.getElementById('noResults');
+    if (noResultsElement) {
+        noResultsElement.classList.toggle('d-none', visibleCount > 0);
     }
 };
 
@@ -86,6 +87,12 @@ function calculateDesi() {
         }
     };
 
+    // Only proceed with calculations if we're on a page with the pallet form
+    if (!document.getElementById('palletModal')) {
+        return; // Exit if we're not on a page with the pallet form
+    }
+
+    // Get input values
     const boardThickness = getInputValue('boardThickness');
     const upperLength = getInputValue('upperBoardLength');
     const upperWidth = getInputValue('upperBoardWidth');
@@ -126,44 +133,51 @@ function calculateDesi() {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-    // Initialize filter elements
-    filterElements = {
-        searchName: document.getElementById('searchName'),
-        filterCompany: document.getElementById('filterCompany'),
-        minPrice: document.getElementById('minPrice'),
-        maxPrice: document.getElementById('maxPrice'),
-        sortOrder: document.getElementById('sortOrder'),
-        noResults: document.getElementById('noResults')
-    };
+    // Initialize filter elements only if we're on the pallets page
+    if (document.getElementById('palletsList')) {
+        filterElements = {
+            searchName: document.getElementById('searchName'),
+            filterCompany: document.getElementById('filterCompany'),
+            minPrice: document.getElementById('minPrice'),
+            maxPrice: document.getElementById('maxPrice'),
+            sortOrder: document.getElementById('sortOrder'),
+            noResults: document.getElementById('noResults')
+        };
 
-    // Add input event listeners for real-time desi calculations
-    const desiInputs = [
-        'boardThickness', 'upperBoardLength', 'upperBoardWidth', 'upperBoardQuantity',
-        'lowerBoardLength', 'lowerBoardWidth', 'lowerBoardQuantity',
-        'closureLength', 'closureWidth', 'closureQuantity',
-        'blockLength', 'blockWidth', 'blockHeight', 'price'
-    ];
-
-    desiInputs.forEach(id => {
-        const element = document.getElementById(id);
-        if (element) {
-            element.addEventListener('input', calculateDesi);
-        }
-    });
-
-    // Add filter event listeners
-    Object.values(filterElements).forEach(element => {
-        if (element && element.id !== 'noResults') {
-            element.addEventListener('change', filterAndSortPallets);
-            if (element.tagName === 'INPUT') {
-                element.addEventListener('keyup', filterAndSortPallets);
+        // Add filter event listeners only if elements exist
+        Object.values(filterElements).forEach(element => {
+            if (element && element.id !== 'noResults') {
+                element.addEventListener('change', filterAndSortPallets);
+                if (element.tagName === 'INPUT') {
+                    element.addEventListener('keyup', filterAndSortPallets);
+                }
             }
-        }
-    });
+        });
 
-    // Initialize Bootstrap modal
-    const palletModal = document.getElementById('palletModal') ? 
-        new bootstrap.Modal(document.getElementById('palletModal')) : null;
+        // Initial filtering only if we're on the pallets page
+        filterAndSortPallets();
+    }
+    
+    // Add desi calculation listeners only if we're on a page with the pallet form
+    if (document.getElementById('palletModal')) {
+        const desiInputs = [
+            'boardThickness', 'upperBoardLength', 'upperBoardWidth', 'upperBoardQuantity',
+            'lowerBoardLength', 'lowerBoardWidth', 'lowerBoardQuantity',
+            'closureLength', 'closureWidth', 'closureQuantity',
+            'blockLength', 'blockWidth', 'blockHeight', 'price'
+        ];
+
+        desiInputs.forEach(id => {
+            const element = document.getElementById(id);
+            if (element) {
+                element.addEventListener('input', calculateDesi);
+            }
+        });
+    }
+
+    // Initialize Bootstrap modal only if modal element exists
+    const modalElement = document.getElementById('palletModal');
+    const palletModal = modalElement ? new bootstrap.Modal(modalElement) : null;
 
     // Save pallet handler
     const handleSavePallet = async () => {
@@ -219,7 +233,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     };
 
-    // Add save button event listener
+    // Add save button event listener if button exists
     const saveButton = document.getElementById('savePallet');
     if (saveButton) {
         saveButton.addEventListener('click', handleSavePallet);
@@ -273,12 +287,11 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     };
 
-    // Add event listeners to action buttons
-    document.querySelectorAll('.edit-pallet').forEach(btn => 
-        btn.addEventListener('click', handleEditPallet));
-    document.querySelectorAll('.delete-pallet').forEach(btn => 
-        btn.addEventListener('click', handleDeletePallet));
-
-    // Initial filtering
-    filterAndSortPallets();
+    // Add event listeners to action buttons only if we're on the pallets page
+    if (document.getElementById('palletsList')) {
+        document.querySelectorAll('.edit-pallet').forEach(btn => 
+            btn.addEventListener('click', handleEditPallet));
+        document.querySelectorAll('.delete-pallet').forEach(btn => 
+            btn.addEventListener('click', handleDeletePallet));
+    }
 });
