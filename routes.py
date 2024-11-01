@@ -11,6 +11,11 @@ from reportlab.lib.pagesizes import A4, landscape
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import cm
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
+
+pdfmetrics.registerFont(TTFont('DejaVuSans', '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf'))
+pdfmetrics.registerFont(TTFont('DejaVuSans-Bold', '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf'))
 
 @app.route('/')
 def index():
@@ -157,41 +162,95 @@ def export_pallets_csv():
 @app.route('/export/pallets/pdf')
 def export_pallets_pdf():
     buffer = io.BytesIO()
-    doc = SimpleDocTemplate(buffer, pagesize=landscape(A4))
-    styles = getSampleStyleSheet()
-    elements = []
+    doc = SimpleDocTemplate(
+        buffer,
+        pagesize=landscape(A4),
+        rightMargin=30,
+        leftMargin=30,
+        topMargin=30,
+        bottomMargin=30
+    )
     
+    styles = getSampleStyleSheet()
     styles.add(ParagraphStyle(
-        name='CellStyle',
+        name='TableHeader',
         parent=styles['Normal'],
-        fontSize=8,
-        leading=10,
-        spaceBefore=6,
-        spaceAfter=6
+        fontName='DejaVuSans-Bold',
+        fontSize=10,
+        textColor=colors.whitesmoke,
+        alignment=1,
+        spaceAfter=10,
+        spaceBefore=10
     ))
     
-    title_style = styles['Title']
-    title_style.fontSize = 16
+    styles.add(ParagraphStyle(
+        name='TableCell',
+        parent=styles['Normal'],
+        fontName='DejaVuSans',
+        fontSize=8,
+        leading=10,
+        spaceBefore=3,
+        spaceAfter=3
+    ))
+    
+    elements = []
+    title_style = ParagraphStyle(
+        'CustomTitle',
+        parent=styles['Title'],
+        fontName='DejaVuSans-Bold',
+        fontSize=20,
+        spaceAfter=30,
+        alignment=1
+    )
+    
     elements.append(Paragraph("Palet Yönetim Sistemi - Detaylı Rapor", title_style))
-    elements.append(Paragraph(f"Oluşturma Tarihi: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}", styles['Normal']))
+    elements.append(Paragraph(
+        f"Oluşturma Tarihi: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
+        ParagraphStyle('Date', parent=styles['Normal'], fontName='DejaVuSans', alignment=1, spaceAfter=20)
+    ))
     
     headers = [
-        'ID', 'İsim', 'Firma', 'Fiyat (TL)', 'Tahta\nKalınlığı\n(cm)',
-        'Üst Tahta\nÖlçüleri\n(uzxgenxadet)', 'Alt Tahta\nÖlçüleri\n(uzxgenxadet)',
-        'Kapatma\nÖlçüleri\n(uzxgenxadet)', 'Takoz\nÖlçüleri\n(uzxgenxyük)',
-        'Desi Hesapları'
+        'ID',
+        'İsim',
+        'Firma',
+        'Fiyat (TL)',
+        'Hacim (desi)',
+        'Üst Tahta\nÖlçüleri',
+        'Alt Tahta\nÖlçüleri',
+        'Kapatma\nÖlçüleri',
+        'Takoz\nÖlçüleri',
+        'Desi\nHesapları'
     ]
     
-    data = [headers]
+    data = [[Paragraph(header, styles['TableHeader']) for header in headers]]
     pallets = Pallet.query.all()
     
     for pallet in pallets:
         volumes = calculate_component_volumes(pallet)
         
-        upper_boards = f"{pallet.upper_board_length}x{pallet.upper_board_width}x{pallet.upper_board_quantity}"
-        lower_boards = f"{pallet.lower_board_length}x{pallet.lower_board_width}x{pallet.lower_board_quantity}"
-        closure_boards = f"{pallet.closure_length}x{pallet.closure_width}x{pallet.closure_quantity}"
-        blocks = f"{pallet.block_length}x{pallet.block_width}x{pallet.block_height}"
+        upper_boards = (
+            f"Uzunluk: {pallet.upper_board_length} cm\n"
+            f"Genişlik: {pallet.upper_board_width} cm\n"
+            f"Adet: {pallet.upper_board_quantity}"
+        )
+        
+        lower_boards = (
+            f"Uzunluk: {pallet.lower_board_length} cm\n"
+            f"Genişlik: {pallet.lower_board_width} cm\n"
+            f"Adet: {pallet.lower_board_quantity}"
+        )
+        
+        closure_boards = (
+            f"Uzunluk: {pallet.closure_length} cm\n"
+            f"Genişlik: {pallet.closure_width} cm\n"
+            f"Adet: {pallet.closure_quantity}"
+        )
+        
+        blocks = (
+            f"Uzunluk: {pallet.block_length} cm\n"
+            f"Genişlik: {pallet.block_width} cm\n"
+            f"Yükseklik: {pallet.block_height} cm"
+        )
         
         desi_details = (
             f"Üst Tahta: {volumes['upper_board_desi']}\n"
@@ -202,15 +261,30 @@ def export_pallets_pdf():
         )
         
         row = [
-            str(pallet.id), pallet.name, pallet.company.name,
-            f"{pallet.price:.2f}", f"{pallet.board_thickness:.1f}",
-            upper_boards, lower_boards, closure_boards, blocks, desi_details
+            Paragraph(str(pallet.id), styles['TableCell']),
+            Paragraph(pallet.name, styles['TableCell']),
+            Paragraph(pallet.company.name, styles['TableCell']),
+            Paragraph(f"{pallet.price:.2f}", styles['TableCell']),
+            Paragraph(f"{pallet.total_volume}", styles['TableCell']),
+            Paragraph(upper_boards, styles['TableCell']),
+            Paragraph(lower_boards, styles['TableCell']),
+            Paragraph(closure_boards, styles['TableCell']),
+            Paragraph(blocks, styles['TableCell']),
+            Paragraph(desi_details, styles['TableCell'])
         ]
         data.append(row)
     
     col_widths = [
-        1.5*cm, 3*cm, 3*cm, 2*cm, 2*cm,
-        3.5*cm, 3.5*cm, 3.5*cm, 3*cm, 4*cm,
+        1.2*cm,
+        3*cm,
+        3*cm,
+        2*cm,
+        2*cm,
+        4*cm,
+        4*cm,
+        4*cm,
+        4*cm,
+        4*cm
     ]
     
     table = Table(data, colWidths=col_widths, repeatRows=1)
@@ -219,12 +293,12 @@ def export_pallets_pdf():
         ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#2196F3')),
         ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
         ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
-        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTNAME', (0, 0), (-1, 0), 'DejaVuSans-Bold'),
         ('FONTSIZE', (0, 0), (-1, 0), 10),
         ('BACKGROUND', (0, 1), (-1, -1), colors.white),
         ('TEXTCOLOR', (0, 1), (-1, -1), colors.black),
         ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-        ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+        ('FONTNAME', (0, 1), (-1, -1), 'DejaVuSans'),
         ('FONTSIZE', (0, 1), (-1, -1), 8),
         ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
@@ -233,6 +307,7 @@ def export_pallets_pdf():
         ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
         ('LEFTPADDING', (0, 0), (-1, -1), 3),
         ('RIGHTPADDING', (0, 0), (-1, -1), 3),
+        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#f8f9fa')]),
     ]))
     
     elements.append(table)
