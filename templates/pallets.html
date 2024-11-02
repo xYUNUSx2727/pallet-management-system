@@ -91,52 +91,90 @@
                 <td>{{ pallet.company.name }}</td>
                 <td>{{ "%.2f"|format(pallet.price) }}</td>
                 <td>{{ pallet.total_volume }}</td>
-                <td class="pallet-dimensions">
-                    <div class="dimensions-group mb-2">
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <strong class="dimension-label">Üst Tahta</strong>
-                            <small class="text-muted">{{ pallet.upper_board_quantity }} adet</small>
+                <td>
+                    <div class="measurements-compact">
+                        <div class="measurement-item">
+                            <h6>
+                                <span>Üst Tahta</span>
+                                <small>{{ pallet.upper_board_quantity }} adet</small>
+                            </h6>
+                            <div class="specs">
+                                <div class="spec">
+                                    <span class="spec-label">Uzunluk</span>
+                                    <span class="spec-value">{{ pallet.upper_board_length }} cm</span>
+                                </div>
+                                <div class="spec">
+                                    <span class="spec-label">Genişlik</span>
+                                    <span class="spec-value">{{ pallet.upper_board_width }} cm</span>
+                                </div>
+                                <div class="spec">
+                                    <span class="spec-label">Kalınlık</span>
+                                    <span class="spec-value">{{ pallet.board_thickness }} cm</span>
+                                </div>
+                            </div>
                         </div>
-                        <div class="measurements">
-                            <span>Uzunluk: {{ pallet.upper_board_length }} cm</span>
-                            <span>Genişlik: {{ pallet.upper_board_width }} cm</span>
-                            <span>Kalınlık: {{ pallet.board_thickness }} cm</span>
+                        
+                        <div class="measurement-item">
+                            <h6>
+                                <span>Alt Tahta</span>
+                                <small>{{ pallet.lower_board_quantity }} adet</small>
+                            </h6>
+                            <div class="specs">
+                                <div class="spec">
+                                    <span class="spec-label">Uzunluk</span>
+                                    <span class="spec-value">{{ pallet.lower_board_length }} cm</span>
+                                </div>
+                                <div class="spec">
+                                    <span class="spec-label">Genişlik</span>
+                                    <span class="spec-value">{{ pallet.lower_board_width }} cm</span>
+                                </div>
+                                <div class="spec">
+                                    <span class="spec-label">Kalınlık</span>
+                                    <span class="spec-value">{{ pallet.board_thickness }} cm</span>
+                                </div>
+                            </div>
                         </div>
-                    </div>
-
-                    <div class="dimensions-group mb-2">
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <strong class="dimension-label">Alt Tahta</strong>
-                            <small class="text-muted">{{ pallet.lower_board_quantity }} adet</small>
+                        
+                        <div class="measurement-item">
+                            <h6>
+                                <span>Kapatma</span>
+                                <small>{{ pallet.closure_quantity }} adet</small>
+                            </h6>
+                            <div class="specs">
+                                <div class="spec">
+                                    <span class="spec-label">Uzunluk</span>
+                                    <span class="spec-value">{{ pallet.closure_length }} cm</span>
+                                </div>
+                                <div class="spec">
+                                    <span class="spec-label">Genişlik</span>
+                                    <span class="spec-value">{{ pallet.closure_width }} cm</span>
+                                </div>
+                                <div class="spec">
+                                    <span class="spec-label">Kalınlık</span>
+                                    <span class="spec-value">{{ pallet.board_thickness }} cm</span>
+                                </div>
+                            </div>
                         </div>
-                        <div class="measurements">
-                            <span>Uzunluk: {{ pallet.lower_board_length }} cm</span>
-                            <span>Genişlik: {{ pallet.lower_board_width }} cm</span>
-                            <span>Kalınlık: {{ pallet.board_thickness }} cm</span>
-                        </div>
-                    </div>
-
-                    <div class="dimensions-group mb-2">
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <strong class="dimension-label">Kapatma</strong>
-                            <small class="text-muted">{{ pallet.closure_quantity }} adet</small>
-                        </div>
-                        <div class="measurements">
-                            <span>Uzunluk: {{ pallet.closure_length }} cm</span>
-                            <span>Genişlik: {{ pallet.closure_width }} cm</span>
-                            <span>Kalınlık: {{ pallet.board_thickness }} cm</span>
-                        </div>
-                    </div>
-
-                    <div class="dimensions-group">
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <strong class="dimension-label">Takoz</strong>
-                            <small class="text-muted">9 adet</small>
-                        </div>
-                        <div class="measurements">
-                            <span>Uzunluk: {{ pallet.block_length }} cm</span>
-                            <span>Genişlik: {{ pallet.block_width }} cm</span>
-                            <span>Yükseklik: {{ pallet.block_height }} cm</span>
+                        
+                        <div class="measurement-item">
+                            <h6>
+                                <span>Takoz</span>
+                                <small>9 adet</small>
+                            </h6>
+                            <div class="specs">
+                                <div class="spec">
+                                    <span class="spec-label">Uzunluk</span>
+                                    <span class="spec-value">{{ pallet.block_length }} cm</span>
+                                </div>
+                                <div class="spec">
+                                    <span class="spec-label">Genişlik</span>
+                                    <span class="spec-value">{{ pallet.block_width }} cm</span>
+                                </div>
+                                <div class="spec">
+                                    <span class="spec-label">Yükseklik</span>
+                                    <span class="spec-value">{{ pallet.block_height }} cm</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </td>
@@ -173,7 +211,7 @@
         </h2>
         <div id="pallet{{ pallet.id }}" class="accordion-collapse collapse">
             <div class="accordion-body">
-                <div class="pallet-info">
+                <div class="pallet-info mb-3">
                     <div class="info-group">
                         <label>Firma:</label>
                         <span>{{ pallet.company.name }}</span>
@@ -184,52 +222,88 @@
                     </div>
                 </div>
 
-                <div class="dimensions-section">
-                    <div class="dimensions-group mb-2">
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <strong class="dimension-label">Üst Tahta</strong>
-                            <small class="text-muted">{{ pallet.upper_board_quantity }} adet</small>
-                        </div>
-                        <div class="measurements">
-                            <span>Uzunluk: {{ pallet.upper_board_length }} cm</span>
-                            <span>Genişlik: {{ pallet.upper_board_width }} cm</span>
-                            <span>Kalınlık: {{ pallet.board_thickness }} cm</span>
-                        </div>
-                    </div>
-
-                    <div class="dimensions-group mb-2">
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <strong class="dimension-label">Alt Tahta</strong>
-                            <small class="text-muted">{{ pallet.lower_board_quantity }} adet</small>
-                        </div>
-                        <div class="measurements">
-                            <span>Uzunluk: {{ pallet.lower_board_length }} cm</span>
-                            <span>Genişlik: {{ pallet.lower_board_width }} cm</span>
-                            <span>Kalınlık: {{ pallet.board_thickness }} cm</span>
+                <div class="measurements-compact">
+                    <div class="measurement-item">
+                        <h6>
+                            <span>Üst Tahta</span>
+                            <small>{{ pallet.upper_board_quantity }} adet</small>
+                        </h6>
+                        <div class="specs">
+                            <div class="spec">
+                                <span class="spec-label">Uzunluk</span>
+                                <span class="spec-value">{{ pallet.upper_board_length }} cm</span>
+                            </div>
+                            <div class="spec">
+                                <span class="spec-label">Genişlik</span>
+                                <span class="spec-value">{{ pallet.upper_board_width }} cm</span>
+                            </div>
+                            <div class="spec">
+                                <span class="spec-label">Kalınlık</span>
+                                <span class="spec-value">{{ pallet.board_thickness }} cm</span>
+                            </div>
                         </div>
                     </div>
-
-                    <div class="dimensions-group mb-2">
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <strong class="dimension-label">Kapatma</strong>
-                            <small class="text-muted">{{ pallet.closure_quantity }} adet</small>
-                        </div>
-                        <div class="measurements">
-                            <span>Uzunluk: {{ pallet.closure_length }} cm</span>
-                            <span>Genişlik: {{ pallet.closure_width }} cm</span>
-                            <span>Kalınlık: {{ pallet.board_thickness }} cm</span>
+                    
+                    <div class="measurement-item">
+                        <h6>
+                            <span>Alt Tahta</span>
+                            <small>{{ pallet.lower_board_quantity }} adet</small>
+                        </h6>
+                        <div class="specs">
+                            <div class="spec">
+                                <span class="spec-label">Uzunluk</span>
+                                <span class="spec-value">{{ pallet.lower_board_length }} cm</span>
+                            </div>
+                            <div class="spec">
+                                <span class="spec-label">Genişlik</span>
+                                <span class="spec-value">{{ pallet.lower_board_width }} cm</span>
+                            </div>
+                            <div class="spec">
+                                <span class="spec-label">Kalınlık</span>
+                                <span class="spec-value">{{ pallet.board_thickness }} cm</span>
+                            </div>
                         </div>
                     </div>
-
-                    <div class="dimensions-group">
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <strong class="dimension-label">Takoz</strong>
-                            <small class="text-muted">9 adet</small>
+                    
+                    <div class="measurement-item">
+                        <h6>
+                            <span>Kapatma</span>
+                            <small>{{ pallet.closure_quantity }} adet</small>
+                        </h6>
+                        <div class="specs">
+                            <div class="spec">
+                                <span class="spec-label">Uzunluk</span>
+                                <span class="spec-value">{{ pallet.closure_length }} cm</span>
+                            </div>
+                            <div class="spec">
+                                <span class="spec-label">Genişlik</span>
+                                <span class="spec-value">{{ pallet.closure_width }} cm</span>
+                            </div>
+                            <div class="spec">
+                                <span class="spec-label">Kalınlık</span>
+                                <span class="spec-value">{{ pallet.board_thickness }} cm</span>
+                            </div>
                         </div>
-                        <div class="measurements">
-                            <span>Uzunluk: {{ pallet.block_length }} cm</span>
-                            <span>Genişlik: {{ pallet.block_width }} cm</span>
-                            <span>Yükseklik: {{ pallet.block_height }} cm</span>
+                    </div>
+                    
+                    <div class="measurement-item">
+                        <h6>
+                            <span>Takoz</span>
+                            <small>9 adet</small>
+                        </h6>
+                        <div class="specs">
+                            <div class="spec">
+                                <span class="spec-label">Uzunluk</span>
+                                <span class="spec-value">{{ pallet.block_length }} cm</span>
+                            </div>
+                            <div class="spec">
+                                <span class="spec-label">Genişlik</span>
+                                <span class="spec-value">{{ pallet.block_width }} cm</span>
+                            </div>
+                            <div class="spec">
+                                <span class="spec-label">Yükseklik</span>
+                                <span class="spec-value">{{ pallet.block_height }} cm</span>
+                            </div>
                         </div>
                     </div>
                 </div>

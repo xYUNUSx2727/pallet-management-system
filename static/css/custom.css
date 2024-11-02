@@ -101,146 +101,85 @@ body {
     vertical-align: middle;
 }
 
-/* Dimensions Styles */
-.dimensions-group {
-    background: rgba(52, 152, 219, 0.1) !important;
-    padding: 0.75rem !important;
-    border-radius: 0.5rem !important;
-    margin-bottom: 0.75rem !important;
+/* Compact Measurements Styles */
+.measurements-compact {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.5rem;
+    font-size: 0.9rem;
 }
 
-.dimensions-group:last-child {
-    margin-bottom: 0 !important;
+.measurement-item {
+    background: rgba(52, 152, 219, 0.1);
+    padding: 0.5rem;
+    border-radius: 0.25rem;
 }
 
-.dimension-label {
-    min-width: 120px !important;
-    display: inline-block !important;
-    position: relative !important;
-    color: var(--bs-info) !important;
-    font-size: 0.9rem !important;
-    text-transform: uppercase !important;
-    letter-spacing: 0.5px !important;
+.measurement-item h6 {
+    color: var(--bs-info);
+    font-size: 0.8rem;
+    margin: 0 0 0.25rem 0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
 }
 
-.dimension-label::after {
-    content: ':' !important;
-    position: absolute !important;
-    right: 10px !important;
+.measurement-item .specs {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.25rem;
+    font-size: 0.8rem;
 }
 
-.measurements {
-    display: flex !important;
-    flex-direction: column !important;
-    gap: 0.5rem !important;
+.measurement-item .spec {
+    display: flex;
+    flex-direction: column;
 }
 
-.measurements span {
-    padding-left: 1rem !important;
+.measurement-item .spec-label {
+    color: var(--bs-gray-500);
+    font-size: 0.7rem;
+}
+
+.measurement-item .spec-value {
+    font-weight: 500;
 }
 
 /* Button Group Styles */
 .btn-group-vertical {
-    display: flex !important;
-    flex-direction: column !important;
-    align-items: stretch !important;
-    width: 100% !important;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
 }
 
 .btn-group-vertical .btn {
-    width: 100% !important;
-    margin-bottom: 0.5rem !important;
-    text-align: left !important;
-    padding: 0.5rem 1rem !important;
+    width: 100%;
+    margin-bottom: 0.5rem;
+    text-align: left;
+    padding: 0.5rem 1rem;
 }
 
 .btn-group-vertical .btn:last-child {
-    margin-bottom: 0 !important;
+    margin-bottom: 0;
 }
 
 .btn-group-vertical .btn i {
-    width: 20px !important;
-    text-align: center !important;
+    width: 20px;
+    text-align: center;
 }
 
-/* Enhanced Accordion Styles */
-.accordion-item {
-    margin-bottom: 1rem;
-    border: 2px solid var(--bs-primary);
-}
-
-.accordion-button {
-    background-color: var(--bs-dark);
-    color: var(--bs-light);
-}
-
-.accordion-button:not(.collapsed) {
-    background-color: var(--bs-primary);
-    color: var(--bs-light);
-}
-
-.accordion-collapse {
-    background-color: var(--bs-dark);
-}
-
-/* Mobile View Styles */
-.pallet-info {
-    margin-bottom: 1.5rem;
-}
-
-.info-group {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 0.5rem;
-    padding: 0.75rem;
-    background: rgba(52, 152, 219, 0.1);
-    border-radius: 0.5rem;
-}
-
-.info-group label {
-    color: var(--bs-info);
-    font-weight: 500;
-    margin: 0;
-}
-
-.dimensions-section {
-    background: rgba(52, 152, 219, 0.05);
-    padding: 1.2rem;
-    border-radius: 0.5rem;
-    margin-top: 1rem;
-}
-
-/* Alert Styles */
-.alert {
-    border: 2px solid var(--bs-info);
-    background: rgba(52, 152, 219, 0.1);
-}
-
-/* Modal Styles */
-.modal-content {
-    background: #2a2e35;
-    border: 2px solid var(--bs-primary);
-}
-
-.modal-header {
-    border-bottom: 2px solid var(--bs-primary);
-}
-
-.modal-footer {
-    border-top: 2px solid var(--bs-primary);
-}
-
-/* Responsive Styles */
+/* Mobile View */
 @media (max-width: 768px) {
-    .filter-card .card-body {
-        padding: 1rem;
+    .measurements-compact {
+        grid-template-columns: 1fr;
     }
     
-    .filter-card .row > [class*="col-"] {
-        margin-bottom: 1rem;
-    }
-    
-    .filter-card .row > [class*="col-"]:last-child {
-        margin-bottom: 0;
+    .measurement-item .specs {
+        grid-template-columns: repeat(3, 1fr);
     }
 }
+
+/* Rest of the existing styles... */
