@@ -41,36 +41,56 @@ const filterAndSortPallets = function() {
             filterElements.noResults.classList.toggle('d-none', visibleCount > 0);
         }
     } catch (error) {
-        const errorMessage = error.message || 'Filtreleme işlemi sırasında bir hata oluştu';
-        alert(errorMessage);
+        alert('Filtreleme hatası: ' + error.message);
     }
 };
 
 function validateMeasurements(measurements) {
+    const errors = [];
     for (const [key, value] of Object.entries(measurements)) {
         if (isNaN(value) || value < 0) {
-            throw new Error(`${key} geçersiz veya negatif bir değer içeriyor`);
+            errors.push(`${key} geçersiz veya negatif bir değer içeriyor`);
         }
+    }
+    if (errors.length > 0) {
+        throw new Error(errors.join('\n'));
     }
 }
 
 function calculateDesi() {
     try {
-        const measurements = {
-            'Tahta Kalınlığı': parseFloat(document.getElementById('boardThickness')?.value) || 0,
-            'Üst Tahta Uzunluğu': parseFloat(document.getElementById('upperBoardLength')?.value) || 0,
-            'Üst Tahta Genişliği': parseFloat(document.getElementById('upperBoardWidth')?.value) || 0,
-            'Üst Tahta Adedi': parseInt(document.getElementById('upperBoardQuantity')?.value) || 0,
-            'Alt Tahta Uzunluğu': parseFloat(document.getElementById('lowerBoardLength')?.value) || 0,
-            'Alt Tahta Genişliği': parseFloat(document.getElementById('lowerBoardWidth')?.value) || 0,
-            'Alt Tahta Adedi': parseInt(document.getElementById('lowerBoardQuantity')?.value) || 0,
-            'Kapatma Uzunluğu': parseFloat(document.getElementById('closureLength')?.value) || 0,
-            'Kapatma Genişliği': parseFloat(document.getElementById('closureWidth')?.value) || 0,
-            'Kapatma Adedi': parseInt(document.getElementById('closureQuantity')?.value) || 0,
-            'Takoz Uzunluğu': parseFloat(document.getElementById('blockLength')?.value) || 0,
-            'Takoz Genişliği': parseFloat(document.getElementById('blockWidth')?.value) || 0,
-            'Takoz Yüksekliği': parseFloat(document.getElementById('blockHeight')?.value) || 0
+        // Get all measurement inputs
+        const inputIds = [
+            'boardThickness', 'upperBoardLength', 'upperBoardWidth', 'upperBoardQuantity',
+            'lowerBoardLength', 'lowerBoardWidth', 'lowerBoardQuantity',
+            'closureLength', 'closureWidth', 'closureQuantity',
+            'blockLength', 'blockWidth', 'blockHeight'
+        ];
+
+        const measurements = {};
+        const measurementLabels = {
+            'boardThickness': 'Tahta Kalınlığı',
+            'upperBoardLength': 'Üst Tahta Uzunluğu',
+            'upperBoardWidth': 'Üst Tahta Genişliği',
+            'upperBoardQuantity': 'Üst Tahta Adedi',
+            'lowerBoardLength': 'Alt Tahta Uzunluğu',
+            'lowerBoardWidth': 'Alt Tahta Genişliği',
+            'lowerBoardQuantity': 'Alt Tahta Adedi',
+            'closureLength': 'Kapatma Uzunluğu',
+            'closureWidth': 'Kapatma Genişliği',
+            'closureQuantity': 'Kapatma Adedi',
+            'blockLength': 'Takoz Uzunluğu',
+            'blockWidth': 'Takoz Genişliği',
+            'blockHeight': 'Takoz Yüksekliği'
         };
+
+        inputIds.forEach(id => {
+            const element = document.getElementById(id);
+            if (!element) {
+                throw new Error(`${measurementLabels[id]} için gerekli alan bulunamadı`);
+            }
+            measurements[measurementLabels[id]] = parseFloat(element.value) || 0;
+        });
 
         validateMeasurements(measurements);
 
@@ -80,12 +100,12 @@ function calculateDesi() {
         const lowerDesi = (measurements['Alt Tahta Uzunluğu'] * measurements['Alt Tahta Genişliği'] * 
                           measurements['Tahta Kalınlığı'] * measurements['Alt Tahta Adedi']) / 1000;
         const closureDesi = (measurements['Kapatma Uzunluğu'] * measurements['Kapatma Genişliği'] * 
-                            measurements['Tahta Kalınlığı'] * measurements['Kapatma Adedi']) / 1000;
+                           measurements['Tahta Kalınlığı'] * measurements['Kapatma Adedi']) / 1000;
         const blockDesi = (measurements['Takoz Uzunluğu'] * measurements['Takoz Genişliği'] * 
-                          measurements['Takoz Yüksekliği'] * 9) / 1000;
+                         measurements['Takoz Yüksekliği'] * 9) / 1000;
         const totalDesi = upperDesi + lowerDesi + closureDesi + blockDesi;
 
-        // Update UI with null checks
+        // Update UI
         const desiElements = {
             'upperBoardDesi': upperDesi,
             'lowerBoardDesi': lowerDesi,
@@ -101,8 +121,7 @@ function calculateDesi() {
             }
         });
     } catch (error) {
-        const errorMessage = error.message || 'Desi hesaplama sırasında bir hata oluştu';
-        alert(errorMessage);
+        alert('Desi hesaplama hatası: ' + error.message);
     }
 }
 
@@ -158,88 +177,88 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
 
-        // Initialize accordions with error handling
-        document.querySelectorAll('.accordion-button').forEach(button => {
-            button.addEventListener('click', (e) => {
-                try {
-                    if (!e.target.dataset.bsTarget) {
-                        throw new Error('Accordion hedef elementi bulunamadı');
-                    }
-                    const target = document.querySelector(e.target.dataset.bsTarget);
-                    if (!target) {
-                        throw new Error('Accordion içerik elementi bulunamadı');
-                    }
-                    new bootstrap.Collapse(target);
-                } catch (error) {
-                    const errorMessage = error.message || 'Accordion açılırken bir hata oluştu';
-                    alert(errorMessage);
-                }
-            });
-        });
-
         // Save pallet handler with improved validation
         const handleSavePallet = async () => {
             try {
-                const formElements = {
-                    name: document.getElementById('palletName'),
-                    company_id: document.getElementById('companySelect'),
-                    price: document.getElementById('price'),
-                    board_thickness: document.getElementById('boardThickness'),
-                    upper_board_length: document.getElementById('upperBoardLength'),
-                    upper_board_width: document.getElementById('upperBoardWidth'),
-                    upper_board_quantity: document.getElementById('upperBoardQuantity'),
-                    lower_board_length: document.getElementById('lowerBoardLength'),
-                    lower_board_width: document.getElementById('lowerBoardWidth'),
-                    lower_board_quantity: document.getElementById('lowerBoardQuantity'),
-                    closure_length: document.getElementById('closureLength'),
-                    closure_width: document.getElementById('closureWidth'),
-                    closure_quantity: document.getElementById('closureQuantity'),
-                    block_length: document.getElementById('blockLength'),
-                    block_width: document.getElementById('blockWidth'),
-                    block_height: document.getElementById('blockHeight')
+                const requiredFields = {
+                    'palletName': 'Palet Adı',
+                    'companySelect': 'Firma',
+                    'price': 'Fiyat',
+                    'boardThickness': 'Tahta Kalınlığı',
+                    'upperBoardLength': 'Üst Tahta Uzunluğu',
+                    'upperBoardWidth': 'Üst Tahta Genişliği',
+                    'upperBoardQuantity': 'Üst Tahta Adedi',
+                    'lowerBoardLength': 'Alt Tahta Uzunluğu',
+                    'lowerBoardWidth': 'Alt Tahta Genişliği',
+                    'lowerBoardQuantity': 'Alt Tahta Adedi',
+                    'closureLength': 'Kapatma Uzunluğu',
+                    'closureWidth': 'Kapatma Genişliği',
+                    'closureQuantity': 'Kapatma Adedi',
+                    'blockLength': 'Takoz Uzunluğu',
+                    'blockWidth': 'Takoz Genişliği',
+                    'blockHeight': 'Takoz Yüksekliği'
                 };
 
-                // Validate form elements
-                const missingElements = Object.entries(formElements)
-                    .filter(([_, element]) => !element)
-                    .map(([key]) => key);
+                const formElements = {};
+                const missingFields = [];
+                const emptyFields = [];
+                const invalidNumbers = [];
 
-                if (missingElements.length > 0) {
-                    throw new Error(`Form elemanları eksik: ${missingElements.join(', ')}`);
+                // Validate form elements and their values
+                Object.entries(requiredFields).forEach(([id, label]) => {
+                    const element = document.getElementById(id);
+                    if (!element) {
+                        missingFields.push(label);
+                        return;
+                    }
+
+                    formElements[id] = element;
+                    const value = element.value.trim();
+
+                    if (!value) {
+                        emptyFields.push(label);
+                        return;
+                    }
+
+                    if (id !== 'palletName' && id !== 'companySelect') {
+                        const numValue = parseFloat(value);
+                        if (isNaN(numValue) || numValue < 0) {
+                            invalidNumbers.push(label);
+                        }
+                    }
+                });
+
+                if (missingFields.length > 0) {
+                    throw new Error(`Form elemanları eksik: ${missingFields.join(', ')}`);
                 }
 
-                // Validate required fields
-                const emptyFields = Object.entries(formElements)
-                    .filter(([_, element]) => !element.value)
-                    .map(([key]) => key);
-
                 if (emptyFields.length > 0) {
-                    throw new Error(`Lütfen tüm alanları doldurun: ${emptyFields.join(', ')}`);
+                    throw new Error(`Lütfen şu alanları doldurun: ${emptyFields.join(', ')}`);
+                }
+
+                if (invalidNumbers.length > 0) {
+                    throw new Error(`Geçersiz sayısal değerler: ${invalidNumbers.join(', ')}`);
                 }
 
                 const palletId = document.getElementById('palletId')?.value;
-                const palletData = {};
-
-                Object.entries(formElements).forEach(([key, element]) => {
-                    const value = element.value.trim();
-                    if (['price', 'board_thickness', 'upper_board_length', 'upper_board_width',
-                         'lower_board_length', 'lower_board_width', 'closure_length', 'closure_width',
-                         'block_length', 'block_width', 'block_height'].includes(key)) {
-                        const numValue = parseFloat(value);
-                        if (isNaN(numValue) || numValue < 0) {
-                            throw new Error(`${key} için geçersiz değer girildi`);
-                        }
-                        palletData[key] = numValue;
-                    } else if (['upper_board_quantity', 'lower_board_quantity', 'closure_quantity'].includes(key)) {
-                        const numValue = parseInt(value);
-                        if (isNaN(numValue) || numValue < 0) {
-                            throw new Error(`${key} için geçersiz değer girildi`);
-                        }
-                        palletData[key] = numValue;
-                    } else {
-                        palletData[key] = value;
-                    }
-                });
+                const palletData = {
+                    name: formElements.palletName.value.trim(),
+                    company_id: formElements.companySelect.value,
+                    price: parseFloat(formElements.price.value),
+                    board_thickness: parseFloat(formElements.boardThickness.value),
+                    upper_board_length: parseFloat(formElements.upperBoardLength.value),
+                    upper_board_width: parseFloat(formElements.upperBoardWidth.value),
+                    upper_board_quantity: parseInt(formElements.upperBoardQuantity.value),
+                    lower_board_length: parseFloat(formElements.lowerBoardLength.value),
+                    lower_board_width: parseFloat(formElements.lowerBoardWidth.value),
+                    lower_board_quantity: parseInt(formElements.lowerBoardQuantity.value),
+                    closure_length: parseFloat(formElements.closureLength.value),
+                    closure_width: parseFloat(formElements.closureWidth.value),
+                    closure_quantity: parseInt(formElements.closureQuantity.value),
+                    block_length: parseFloat(formElements.blockLength.value),
+                    block_width: parseFloat(formElements.blockWidth.value),
+                    block_height: parseFloat(formElements.blockHeight.value)
+                };
 
                 const response = await fetch(palletId ? `/api/pallets/${palletId}` : '/api/pallets', {
                     method: palletId ? 'PUT' : 'POST',
@@ -254,18 +273,19 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 window.location.reload();
             } catch (error) {
-                const errorMessage = error.message || 'Bilinmeyen bir hata oluştu';
-                alert(`Palet kaydetme hatası: ${errorMessage}`);
+                alert('Palet kaydetme hatası: ' + error.message);
             }
         };
 
-        // Add save button event listener with null check
+        // Add save button event listener
         const saveButton = document.getElementById('savePallet');
         if (saveButton) {
             saveButton.addEventListener('click', handleSavePallet);
+        } else {
+            throw new Error('Kaydet butonu bulunamadı');
         }
 
-        // CRUD operation handlers with improved error handling
+        // CRUD operation handlers
         const handleViewPallet = (e) => {
             try {
                 const palletId = e.currentTarget.dataset.id;
@@ -274,8 +294,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 window.location.href = `/pallets/${palletId}`;
             } catch (error) {
-                const errorMessage = error.message || 'Bilinmeyen bir hata oluştu';
-                alert(`Palet görüntüleme hatası: ${errorMessage}`);
+                alert('Görüntüleme hatası: ' + error.message);
             }
         };
 
@@ -293,6 +312,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 
                 const pallet = await response.json();
+
+                // Validate and set form values
                 Object.entries(pallet).forEach(([key, value]) => {
                     const element = document.getElementById(key) || 
                                 document.getElementById(`pallet${key.charAt(0).toUpperCase() + key.slice(1)}`);
@@ -301,14 +322,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 });
 
-                if (!palletModal) {
-                    throw new Error('Modal bileşeni başlatılamadı');
-                }
                 palletModal.show();
                 calculateDesi();
             } catch (error) {
-                const errorMessage = error.message || 'Bilinmeyen bir hata oluştu';
-                alert(`Palet düzenleme hatası: ${errorMessage}`);
+                alert('Düzenleme hatası: ' + error.message);
             }
         };
 
@@ -334,26 +351,18 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 window.location.reload();
             } catch (error) {
-                const errorMessage = error.message || 'Bilinmeyen bir hata oluştu';
-                alert(`Palet silme hatası: ${errorMessage}`);
+                alert('Silme hatası: ' + error.message);
             }
         };
 
-        // Add event listeners to action buttons with null checks
-        document.querySelectorAll('.view-pallet').forEach(btn => {
-            if (btn) btn.addEventListener('click', handleViewPallet);
-        });
-        document.querySelectorAll('.edit-pallet').forEach(btn => {
-            if (btn) btn.addEventListener('click', handleEditPallet);
-        });
-        document.querySelectorAll('.delete-pallet').forEach(btn => {
-            if (btn) btn.addEventListener('click', handleDeletePallet);
-        });
+        // Add event listeners to action buttons
+        document.querySelectorAll('.view-pallet').forEach(btn => btn?.addEventListener('click', handleViewPallet));
+        document.querySelectorAll('.edit-pallet').forEach(btn => btn?.addEventListener('click', handleEditPallet));
+        document.querySelectorAll('.delete-pallet').forEach(btn => btn?.addEventListener('click', handleDeletePallet));
 
         // Initial filtering
         filterAndSortPallets();
     } catch (error) {
-        const errorMessage = error.message || 'Bilinmeyen bir hata oluştu';
-        alert(`Sayfa yüklenirken bir hata oluştu: ${errorMessage}`);
+        alert('Başlatma hatası: ' + error.message);
     }
 });

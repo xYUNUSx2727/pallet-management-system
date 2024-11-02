@@ -176,21 +176,21 @@ def export_pallets_pdf():
         name='TableHeader',
         parent=styles['Normal'],
         fontName='DejaVuSans-Bold',
-        fontSize=10,
+        fontSize=8,
         textColor=colors.whitesmoke,
         alignment=1,
-        spaceAfter=10,
-        spaceBefore=10
+        spaceAfter=8,
+        spaceBefore=8
     ))
     
     styles.add(ParagraphStyle(
         name='TableCell',
         parent=styles['Normal'],
         fontName='DejaVuSans',
-        fontSize=8,
-        leading=10,
-        spaceBefore=3,
-        spaceAfter=3
+        fontSize=7,
+        leading=8,
+        spaceBefore=2,
+        spaceAfter=2
     ))
     
     elements = []
@@ -275,16 +275,16 @@ def export_pallets_pdf():
         data.append(row)
     
     col_widths = [
-        1.2*cm,
-        3*cm,
-        3*cm,
-        2*cm,
-        2*cm,
-        4*cm,
-        4*cm,
-        4*cm,
-        4*cm,
-        4*cm
+        1*cm,     # ID
+        2*cm,     # İsim
+        2*cm,     # Firma
+        1.5*cm,   # Fiyat
+        1.5*cm,   # Hacim
+        2.5*cm,   # Üst Tahta
+        2.5*cm,   # Alt Tahta
+        2.5*cm,   # Kapatma
+        2.5*cm,   # Takoz
+        2.5*cm    # Desi
     ]
     
     table = Table(data, colWidths=col_widths, repeatRows=1)
@@ -294,19 +294,19 @@ def export_pallets_pdf():
         ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
         ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
         ('FONTNAME', (0, 0), (-1, 0), 'DejaVuSans-Bold'),
-        ('FONTSIZE', (0, 0), (-1, 0), 10),
+        ('FONTSIZE', (0, 0), (-1, 0), 8),
         ('BACKGROUND', (0, 1), (-1, -1), colors.white),
         ('TEXTCOLOR', (0, 1), (-1, -1), colors.black),
         ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
         ('FONTNAME', (0, 1), (-1, -1), 'DejaVuSans'),
-        ('FONTSIZE', (0, 1), (-1, -1), 8),
+        ('FONTSIZE', (0, 1), (-1, -1), 7),
         ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
         ('ALIGN', (-1, 1), (-1, -1), 'LEFT'),
-        ('TOPPADDING', (0, 0), (-1, -1), 6),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
-        ('LEFTPADDING', (0, 0), (-1, -1), 3),
-        ('RIGHTPADDING', (0, 0), (-1, -1), 3),
+        ('TOPPADDING', (0, 0), (-1, -1), 4),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+        ('LEFTPADDING', (0, 0), (-1, -1), 2),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 2),
         ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#f8f9fa')]),
     ]))
     
@@ -480,3 +480,12 @@ def update_all_pallets_desi():
     
     db.session.commit()
     return jsonify({'message': 'Tüm paletlerin desi değerleri güncellendi'})
+
+@app.errorhandler(404)
+def not_found_error(error):
+    return render_template('404.html'), 404
+
+@app.errorhandler(500)
+def internal_error(error):
+    db.session.rollback()
+    return render_template('500.html'), 500

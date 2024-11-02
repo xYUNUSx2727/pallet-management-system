@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container text-center mt-5">
+    <h1 class="display-1">404</h1>
+    <h2>Sayfa Bulunamadı</h2>
+    <p class="lead">Aradığınız sayfa mevcut değil veya taşınmış olabilir.</p>
+    <a href="{{ url_for('index') }}" class="btn btn-primary mt-3">
+        <i class="fas fa-home me-2"></i>Ana Sayfaya Dön
+    </a>
+</div>
+{% endblock %}

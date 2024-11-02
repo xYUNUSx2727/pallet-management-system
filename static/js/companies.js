@@ -5,16 +5,35 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Add Company
     saveButton.addEventListener('click', async () => {
-        const companyId = document.getElementById('companyId').value;
-        const companyData = {
-            name: document.getElementById('companyName').value,
-            contact_email: document.getElementById('companyEmail').value
-        };
-
-        const url = companyId ? `/api/companies/${companyId}` : '/api/companies';
-        const method = companyId ? 'PUT' : 'POST';
-
         try {
+            if (!companyForm) {
+                throw new Error('Firma formu bulunamadı');
+            }
+
+            const nameInput = document.getElementById('companyName');
+            const emailInput = document.getElementById('companyEmail');
+
+            if (!nameInput || !emailInput) {
+                throw new Error('Form alanları bulunamadı');
+            }
+
+            if (!nameInput.value.trim()) {
+                throw new Error('Firma adı boş olamaz');
+            }
+
+            if (!emailInput.value.trim()) {
+                throw new Error('E-posta adresi boş olamaz');
+            }
+
+            const companyId = document.getElementById('companyId').value;
+            const companyData = {
+                name: nameInput.value.trim(),
+                contact_email: emailInput.value.trim()
+            };
+
+            const url = companyId ? `/api/companies/${companyId}` : '/api/companies';
+            const method = companyId ? 'PUT' : 'POST';
+
             const response = await fetch(url, {
                 method: method,
                 headers: {
@@ -23,14 +42,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 body: JSON.stringify(companyData)
             });
 
-            if (response.ok) {
-                location.reload();
-            } else {
+            if (!response.ok) {
                 const errorData = await response.json();
                 throw new Error(errorData.message || 'Firma kaydedilirken bir hata oluştu');
             }
+
+            location.reload();
         } catch (error) {
-            alert('Hata: ' + (error.message || 'Bilinmeyen bir hata oluştu'));
+            alert('Hata: ' + error.message);
         }
     });
 
@@ -38,7 +57,7 @@ document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('.edit-company').forEach(button => {
         button.addEventListener('click', async (e) => {
             try {
-                const companyId = e.target.dataset.id;
+                const companyId = e.currentTarget.dataset.id;
                 if (!companyId) {
                     throw new Error('Firma ID bulunamadı');
                 }
@@ -50,13 +69,22 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
 
                 const company = await response.json();
-                document.getElementById('companyId').value = company.id;
-                document.getElementById('companyName').value = company.name;
-                document.getElementById('companyEmail').value = company.contact_email;
+                
+                const idInput = document.getElementById('companyId');
+                const nameInput = document.getElementById('companyName');
+                const emailInput = document.getElementById('companyEmail');
+
+                if (!idInput || !nameInput || !emailInput) {
+                    throw new Error('Form alanları bulunamadı');
+                }
+
+                idInput.value = company.id;
+                nameInput.value = company.name;
+                emailInput.value = company.contact_email;
 
                 companyModal.show();
             } catch (error) {
-                alert('Hata: ' + (error.message || 'Bilinmeyen bir hata oluştu'));
+                alert('Hata: ' + error.message);
             }
         });
     });
@@ -69,7 +97,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     return;
                 }
 
-                const companyId = e.target.dataset.id;
+                const companyId = e.currentTarget.dataset.id;
                 if (!companyId) {
                     throw new Error('Firma ID bulunamadı');
                 }
@@ -85,7 +113,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 location.reload();
             } catch (error) {
-                alert('Hata: ' + (error.message || 'Bilinmeyen bir hata oluştu'));
+                alert('Hata: ' + error.message);
             }
         });
     });

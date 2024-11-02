@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container text-center mt-5">
+    <h1 class="display-1">500</h1>
+    <h2>Sunucu Hatası</h2>
+    <p class="lead">Bir hata oluştu. Lütfen daha sonra tekrar deneyin.</p>
+    <a href="{{ url_for('index') }}" class="btn btn-primary mt-3">
+        <i class="fas fa-home me-2"></i>Ana Sayfaya Dön
+    </a>
+</div>
+{% endblock %}
