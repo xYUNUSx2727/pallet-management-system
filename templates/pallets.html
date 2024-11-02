@@ -77,9 +77,9 @@
 <!-- Pallet List -->
 <div class="pallet-list" id="palletsList">
     {% for pallet in pallets %}
-    {% set price_per_desi = (pallet.price / pallet.total_volume) if pallet.total_volume > 0 else 0 %}
+    {% set price_per_desi = (pallet.price / pallet.total_volume) if pallet.total_volume and pallet.total_volume > 0 else 0 %}
     <div class="pallet-item card mb-3" data-company-id="{{ pallet.company_id }}" 
-         data-price="{{ pallet.price }}" data-volume="{{ pallet.total_volume }}" 
+         data-price="{{ pallet.price }}" data-volume="{{ pallet.total_volume or 0 }}" 
          data-price-per-desi="{{ price_per_desi }}">
         <div class="card-header pallet-header" data-bs-toggle="modal" 
              data-bs-target="#actionModal-{{ pallet.id }}" role="button">
@@ -100,7 +100,7 @@
                     </div>
                     <div class="info-group mb-3">
                         <label>Toplam Hacim:</label>
-                        <span>{{ "%.2f"|format(pallet.total_volume) }} desi</span>
+                        <span>{{ "%.2f"|format(pallet.total_volume or 0) }} desi</span>
                     </div>
                 </div>
                 <div class="col-md-6">
@@ -108,7 +108,7 @@
                         <div class="dimensions-group">
                             <div class="d-flex justify-content-between">
                                 <strong>Üst Tahta ({{ pallet.upper_board_quantity }} adet)</strong>
-                                <small>{{ "%.2f"|format(pallet.upper_board_desi) }} desi</small>
+                                <small>{{ "%.2f"|format(pallet.upper_board_desi or 0) }} desi</small>
                             </div>
                             <div class="measurements">
                                 <span>{{ pallet.upper_board_length }}x{{ pallet.upper_board_width }}x{{ pallet.board_thickness }} cm</span>
@@ -117,7 +117,7 @@
                         <div class="dimensions-group">
                             <div class="d-flex justify-content-between">
                                 <strong>Alt Tahta ({{ pallet.lower_board_quantity }} adet)</strong>
-                                <small>{{ "%.2f"|format(pallet.lower_board_desi) }} desi</small>
+                                <small>{{ "%.2f"|format(pallet.lower_board_desi or 0) }} desi</small>
                             </div>
                             <div class="measurements">
                                 <span>{{ pallet.lower_board_length }}x{{ pallet.lower_board_width }}x{{ pallet.board_thickness }} cm</span>
@@ -126,7 +126,7 @@
                         <div class="dimensions-group">
                             <div class="d-flex justify-content-between">
                                 <strong>Kapatma ({{ pallet.closure_quantity }} adet)</strong>
-                                <small>{{ "%.2f"|format(pallet.closure_desi) }} desi</small>
+                                <small>{{ "%.2f"|format(pallet.closure_desi or 0) }} desi</small>
                             </div>
                             <div class="measurements">
                                 <span>{{ pallet.closure_length }}x{{ pallet.closure_width }}x{{ pallet.board_thickness }} cm</span>
@@ -135,7 +135,7 @@
                         <div class="dimensions-group">
                             <div class="d-flex justify-content-between">
                                 <strong>Takoz (9 adet)</strong>
-                                <small>{{ "%.2f"|format(pallet.block_desi) }} desi</small>
+                                <small>{{ "%.2f"|format(pallet.block_desi or 0) }} desi</small>
                             </div>
                             <div class="measurements">
                                 <span>{{ pallet.block_length }}x{{ pallet.block_width }}x{{ pallet.block_height }} cm</span>
