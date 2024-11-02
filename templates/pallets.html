@@ -71,7 +71,6 @@
     </div>
 </div>
 
-<!-- Desktop View -->
 <div class="table-responsive d-none d-md-block">
     <table class="table">
         <thead>
@@ -180,14 +179,14 @@
                 </td>
                 <td>
                     <div class="btn-group-vertical">
-                        <button class="btn btn-info view-pallet mb-2" data-id="{{ pallet.id }}">
-                            <i class="fas fa-eye me-2"></i>Görüntüle
+                        <button class='btn btn-info view-pallet mb-2' data-id='{{ pallet.id }}'>
+                            <i class='fas fa-eye'></i>
                         </button>
-                        <button class="btn btn-secondary edit-pallet mb-2" data-id="{{ pallet.id }}">
-                            <i class="fas fa-edit me-2"></i>Düzenle
+                        <button class='btn btn-secondary edit-pallet mb-2' data-id='{{ pallet.id }}'>
+                            <i class='fas fa-edit'></i>
                         </button>
-                        <button class="btn btn-danger delete-pallet" data-id="{{ pallet.id }}">
-                            <i class="fas fa-trash me-2"></i>Sil
+                        <button class='btn btn-danger delete-pallet' data-id='{{ pallet.id }}'>
+                            <i class='fas fa-trash'></i>
                         </button>
                     </div>
                 </td>
@@ -197,7 +196,6 @@
     </table>
 </div>
 
-<!-- Mobile View -->
 <div class="accordion d-md-none" id="palletsAccordion">
     {% for pallet in pallets %}
     <div class="accordion-item" data-company-id="{{ pallet.company_id }}" data-price="{{ pallet.price }}" data-volume="{{ pallet.total_volume }}">
@@ -310,14 +308,14 @@
 
                 <div class="actions mt-3">
                     <div class="btn-group-vertical">
-                        <button class="btn btn-info view-pallet mb-2" data-id="{{ pallet.id }}">
-                            <i class="fas fa-eye me-2"></i>Görüntüle
+                        <button class='btn btn-info view-pallet mb-2' data-id='{{ pallet.id }}'>
+                            <i class='fas fa-eye'></i>
                         </button>
-                        <button class="btn btn-secondary edit-pallet mb-2" data-id="{{ pallet.id }}">
-                            <i class="fas fa-edit me-2"></i>Düzenle
+                        <button class='btn btn-secondary edit-pallet mb-2' data-id='{{ pallet.id }}'>
+                            <i class='fas fa-edit'></i>
                         </button>
-                        <button class="btn btn-danger delete-pallet" data-id="{{ pallet.id }}">
-                            <i class="fas fa-trash me-2"></i>Sil
+                        <button class='btn btn-danger delete-pallet' data-id='{{ pallet.id }}'>
+                            <i class='fas fa-trash'></i>
                         </button>
                     </div>
                 </div>

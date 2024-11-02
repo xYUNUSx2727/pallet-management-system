@@ -155,20 +155,18 @@ body {
     width: 100%;
 }
 
+.btn-group-vertical .btn i {
+    margin: 0;
+    width: auto;
+}
+
 .btn-group-vertical .btn {
-    width: 100%;
-    margin-bottom: 0.5rem;
-    text-align: left;
-    padding: 0.5rem 1rem;
+    padding: 0.5rem;
+    text-align: center;
 }
 
 .btn-group-vertical .btn:last-child {
     margin-bottom: 0;
-}
-
-.btn-group-vertical .btn i {
-    width: 20px;
-    text-align: center;
 }
 
 /* Mobile View */
@@ -181,5 +179,3 @@ body {
         grid-template-columns: repeat(3, 1fr);
     }
 }
-
-/* Rest of the existing styles... */
