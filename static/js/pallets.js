@@ -1,253 +1,152 @@
 // Initialize filterElements globally
 let filterElements;
 
-// Define the filtering and sorting function
+// Define the filtering function
 const filterAndSortPallets = function() {
-    try {
-        // Only proceed if we're on the pallets page
-        const palletsList = document.getElementById('palletsList');
-        if (!palletsList) {
-            console.warn('Palet listesi bulunamadı');
-            return;
+    const searchTerm = filterElements.searchName?.value.toLowerCase() || '';
+    const companyId = filterElements.filterCompany?.value || '';
+    const minPrice = parseFloat(filterElements.minPrice?.value) || 0;
+    const maxPrice = parseFloat(filterElements.maxPrice?.value) || Infinity;
+    const sortOrder = filterElements.sortOrder?.value || 'name_asc';
+
+    const items = document.querySelectorAll('tr[data-company-id], .accordion-item');
+    let visibleCount = 0;
+
+    items.forEach(item => {
+        const companyMatch = !companyId || item.dataset.companyId === companyId;
+        const price = parseFloat(item.dataset.price);
+        const priceMatch = price >= minPrice && (maxPrice === Infinity || price <= maxPrice);
+        const nameMatch = item.querySelector('td:first-child, .accordion-button')
+            ?.textContent.toLowerCase().includes(searchTerm);
+
+        if (companyMatch && priceMatch && nameMatch) {
+            item.style.display = '';
+            visibleCount++;
+        } else {
+            item.style.display = 'none';
         }
+    });
 
-        const searchTerm = filterElements.searchName?.value?.toLowerCase() || '';
-        const companyId = filterElements.filterCompany?.value || '';
-        const minPrice = parseFloat(filterElements.minPrice?.value) || 0;
-        const maxPrice = parseFloat(filterElements.maxPrice?.value) || Infinity;
-        const sortOrder = filterElements.sortOrder?.value || 'name_asc';
-
-        const items = palletsList.querySelectorAll('.pallet-item');
-        let visibleCount = 0;
-
-        // Filter items
-        items.forEach(item => {
-            try {
-                const companyMatch = !companyId || item.dataset.companyId === companyId;
-                const price = parseFloat(item.dataset.price) || 0;
-                const priceMatch = price >= minPrice && (maxPrice === Infinity || price <= maxPrice);
-                const nameMatch = item.querySelector('.card-title')
-                    ?.textContent.toLowerCase().includes(searchTerm);
-
-                if (companyMatch && priceMatch && nameMatch) {
-                    item.style.display = '';
-                    visibleCount++;
-                } else {
-                    item.style.display = 'none';
-                }
-            } catch (error) {
-                console.error('Öğe filtreleme hatası:', error);
-            }
-        });
-
-        // Convert NodeList to Array for sorting
-        const itemsArray = Array.from(items);
-
-        // Sort items
-        itemsArray.sort((a, b) => {
-            try {
-                const aValue = a.dataset;
-                const bValue = b.dataset;
-                
-                switch(sortOrder) {
-                    case 'name_asc':
-                        return (a.querySelector('.card-title')?.textContent || '')
-                            .localeCompare(b.querySelector('.card-title')?.textContent || '');
-                    case 'name_desc':
-                        return (b.querySelector('.card-title')?.textContent || '')
-                            .localeCompare(a.querySelector('.card-title')?.textContent || '');
-                    case 'price_asc':
-                        return (parseFloat(aValue.price) || 0) - (parseFloat(bValue.price) || 0);
-                    case 'price_desc':
-                        return (parseFloat(bValue.price) || 0) - (parseFloat(aValue.price) || 0);
-                    case 'volume_asc':
-                        return (parseFloat(aValue.volume) || 0) - (parseFloat(bValue.volume) || 0);
-                    case 'volume_desc':
-                        return (parseFloat(bValue.volume) || 0) - (parseFloat(aValue.volume) || 0);
-                    case 'price_per_desi_asc':
-                        return (parseFloat(aValue.pricePerDesi) || 0) - (parseFloat(bValue.pricePerDesi) || 0);
-                    case 'price_per_desi_desc':
-                        return (parseFloat(bValue.pricePerDesi) || 0) - (parseFloat(aValue.pricePerDesi) || 0);
-                    default:
-                        return 0;
-                }
-            } catch (error) {
-                console.error('Sıralama hatası:', error);
-                return 0;
-            }
-        });
-
-        // Update DOM with sorted items
-        itemsArray.forEach(item => palletsList.appendChild(item));
-
-        // Show/hide no results message
-        const noResultsElement = document.getElementById('noResults');
-        if (noResultsElement) {
-            noResultsElement.classList.toggle('d-none', visibleCount > 0);
-        }
-    } catch (error) {
-        console.error('Filtreleme ve sıralama hatası:', error);
-    }
+    filterElements.noResults.classList.toggle('d-none', visibleCount > 0);
 };
 
-// Calculate desi values for form
 function calculateDesi() {
-    try {
-        // Only proceed if we're in the pallet form modal
-        const palletModal = document.getElementById('palletModal');
-        if (!palletModal || !palletModal.classList.contains('show')) return;
+    // Get values from inputs
+    const boardThickness = parseFloat(document.getElementById('boardThickness')?.value) || 0;
+    const upperLength = parseFloat(document.getElementById('upperBoardLength')?.value) || 0;
+    const upperWidth = parseFloat(document.getElementById('upperBoardWidth')?.value) || 0;
+    const upperQuantity = parseInt(document.getElementById('upperBoardQuantity')?.value) || 0;
+    
+    const lowerLength = parseFloat(document.getElementById('lowerBoardLength')?.value) || 0;
+    const lowerWidth = parseFloat(document.getElementById('lowerBoardWidth')?.value) || 0;
+    const lowerQuantity = parseInt(document.getElementById('lowerBoardQuantity')?.value) || 0;
+    
+    const closureLength = parseFloat(document.getElementById('closureLength')?.value) || 0;
+    const closureWidth = parseFloat(document.getElementById('closureWidth')?.value) || 0;
+    const closureQuantity = parseInt(document.getElementById('closureQuantity')?.value) || 0;
+    
+    const blockLength = parseFloat(document.getElementById('blockLength')?.value) || 0;
+    const blockWidth = parseFloat(document.getElementById('blockWidth')?.value) || 0;
+    const blockHeight = parseFloat(document.getElementById('blockHeight')?.value) || 0;
 
-        const getInputValue = (id) => {
-            const element = document.getElementById(id);
-            return element ? parseFloat(element.value) || 0 : 0;
-        };
+    // Calculate volumes
+    const upperDesi = (upperLength * upperWidth * boardThickness * upperQuantity) / 1000;
+    const lowerDesi = (lowerLength * lowerWidth * boardThickness * lowerQuantity) / 1000;
+    const closureDesi = (closureLength * closureWidth * boardThickness * closureQuantity) / 1000;
+    const blockDesi = (blockLength * blockWidth * blockHeight * 9) / 1000;
+    const totalDesi = upperDesi + lowerDesi + closureDesi + blockDesi;
 
-        const updateElement = (id, value) => {
-            const element = document.getElementById(id);
-            if (element) {
-                element.textContent = value.toFixed(2);
-            }
-        };
-
-        // Get all input values
-        const boardThickness = getInputValue('boardThickness');
-        const upperLength = getInputValue('upperBoardLength');
-        const upperWidth = getInputValue('upperBoardWidth');
-        const upperQuantity = getInputValue('upperBoardQuantity');
-        
-        const lowerLength = getInputValue('lowerBoardLength');
-        const lowerWidth = getInputValue('lowerBoardWidth');
-        const lowerQuantity = getInputValue('lowerBoardQuantity');
-        
-        const closureLength = getInputValue('closureLength');
-        const closureWidth = getInputValue('closureWidth');
-        const closureQuantity = getInputValue('closureQuantity');
-        
-        const blockLength = getInputValue('blockLength');
-        const blockWidth = getInputValue('blockWidth');
-        const blockHeight = getInputValue('blockHeight');
-
-        // Calculate volumes
-        const upperDesi = (upperLength * upperWidth * boardThickness * upperQuantity) / 1000;
-        const lowerDesi = (lowerLength * lowerWidth * boardThickness * lowerQuantity) / 1000;
-        const closureDesi = (closureLength * closureWidth * boardThickness * closureQuantity) / 1000;
-        const blockDesi = (blockLength * blockWidth * blockHeight * 9) / 1000;
-        const totalDesi = upperDesi + lowerDesi + closureDesi + blockDesi;
-
-        // Update UI elements
-        updateElement('upperBoardDesi', upperDesi);
-        updateElement('lowerBoardDesi', lowerDesi);
-        updateElement('closureDesi', closureDesi);
-        updateElement('blockDesi', blockDesi);
-        updateElement('totalDesi', totalDesi);
-
-        // Calculate and update price per desi if price is available
-        const price = getInputValue('price');
-        if (price > 0 && totalDesi > 0) {
-            const pricePerDesi = price / totalDesi;
-            updateElement('pricePerDesi', pricePerDesi);
-        }
-    } catch (error) {
-        console.error('Desi hesaplama hatası:', error);
-        // Set default values in case of error
-        document.querySelectorAll('[id$="Desi"]').forEach(el => el.textContent = '0.00');
-    }
+    // Update UI
+    document.getElementById('upperBoardDesi').textContent = upperDesi.toFixed(2);
+    document.getElementById('lowerBoardDesi').textContent = lowerDesi.toFixed(2);
+    document.getElementById('closureDesi').textContent = closureDesi.toFixed(2);
+    document.getElementById('blockDesi').textContent = blockDesi.toFixed(2);
+    document.getElementById('totalDesi').textContent = totalDesi.toFixed(2);
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-    try {
-        const palletsList = document.getElementById('palletsList');
-        if (!palletsList) {
-            console.warn('Palet listesi bulunamadı');
-            return;
+    // Initialize filter elements with null checks
+    filterElements = {
+        searchName: document.getElementById('searchName'),
+        filterCompany: document.getElementById('filterCompany'),
+        minPrice: document.getElementById('minPrice'),
+        maxPrice: document.getElementById('maxPrice'),
+        sortOrder: document.getElementById('sortOrder'),
+        noResults: document.getElementById('noResults'),
+        palletsList: document.getElementById('palletsList'),
+        palletsAccordion: document.getElementById('palletsAccordion')
+    };
+
+    // Add input event listeners for real-time desi calculations
+    const inputs = ['boardThickness', 'upperBoardLength', 'upperBoardWidth', 'upperBoardQuantity',
+                    'lowerBoardLength', 'lowerBoardWidth', 'lowerBoardQuantity',
+                    'closureLength', 'closureWidth', 'closureQuantity',
+                    'blockLength', 'blockWidth', 'blockHeight'];
+
+    inputs.forEach(id => {
+        document.getElementById(id)?.addEventListener('input', calculateDesi);
+    });
+
+    // Add filter event listeners
+    Object.values(filterElements).forEach(element => {
+        if (element && element.id !== 'noResults' && element.id !== 'palletsList') {
+            element.addEventListener('change', filterAndSortPallets);
+            if (element.tagName === 'INPUT') {
+                element.addEventListener('keyup', filterAndSortPallets);
+            }
         }
+    });
 
-        // Initialize filter elements
-        filterElements = {
-            searchName: document.getElementById('searchName'),
-            filterCompany: document.getElementById('filterCompany'),
-            minPrice: document.getElementById('minPrice'),
-            maxPrice: document.getElementById('maxPrice'),
-            sortOrder: document.getElementById('sortOrder'),
-            noResults: document.getElementById('noResults')
-        };
+    // Initialize Bootstrap components
+    const palletModal = document.getElementById('palletModal') ? 
+        new bootstrap.Modal(document.getElementById('palletModal')) : null;
 
-        // Add filter event listeners
-        Object.entries(filterElements).forEach(([key, element]) => {
-            if (element && key !== 'noResults') {
-                element.addEventListener('change', filterAndSortPallets);
-                if (element.tagName === 'INPUT') {
-                    element.addEventListener('keyup', filterAndSortPallets);
-                }
+    // Initialize accordions
+    document.querySelectorAll('.accordion-button').forEach(button => {
+        button.addEventListener('click', (e) => {
+            const target = document.querySelector(e.target.dataset.bsTarget);
+            if (target) {
+                new bootstrap.Collapse(target);
             }
         });
-
-        // Initial filtering
-        filterAndSortPallets();
-        
-        // Initialize modals and add event listeners for the pallet form
-        const palletModal = document.getElementById('palletModal');
-        if (palletModal) {
-            const desiInputs = [
-                'boardThickness', 'upperBoardLength', 'upperBoardWidth', 'upperBoardQuantity',
-                'lowerBoardLength', 'lowerBoardWidth', 'lowerBoardQuantity',
-                'closureLength', 'closureWidth', 'closureQuantity',
-                'blockLength', 'blockWidth', 'blockHeight', 'price'
-            ];
-
-            desiInputs.forEach(id => {
-                const element = document.getElementById(id);
-                if (element) {
-                    element.addEventListener('input', calculateDesi);
-                }
-            });
-
-            // Initialize Bootstrap modal
-            new bootstrap.Modal(palletModal);
-
-            // Initial calculation when modal is shown
-            palletModal.addEventListener('shown.bs.modal', calculateDesi);
-        }
-    } catch (error) {
-        console.error('Sayfa yüklenirken bir hata oluştu:', error);
-    }
+    });
 
     // Save pallet handler
     const handleSavePallet = async () => {
+        const palletId = document.getElementById('palletId')?.value;
+        const formElements = {
+            name: document.getElementById('palletName'),
+            company_id: document.getElementById('companySelect'),
+            price: document.getElementById('price'),
+            board_thickness: document.getElementById('boardThickness'),
+            upper_board_length: document.getElementById('upperBoardLength'),
+            upper_board_width: document.getElementById('upperBoardWidth'),
+            upper_board_quantity: document.getElementById('upperBoardQuantity'),
+            lower_board_length: document.getElementById('lowerBoardLength'),
+            lower_board_width: document.getElementById('lowerBoardWidth'),
+            lower_board_quantity: document.getElementById('lowerBoardQuantity'),
+            closure_length: document.getElementById('closureLength'),
+            closure_width: document.getElementById('closureWidth'),
+            closure_quantity: document.getElementById('closureQuantity'),
+            block_length: document.getElementById('blockLength'),
+            block_width: document.getElementById('blockWidth'),
+            block_height: document.getElementById('blockHeight')
+        };
+
+        const palletData = {};
+        Object.entries(formElements).forEach(([key, element]) => {
+            if (element) {
+                palletData[key] = ['price', 'board_thickness', 'upper_board_length', 'upper_board_width',
+                                'lower_board_length', 'lower_board_width', 'closure_length', 'closure_width',
+                                'block_length', 'block_width', 'block_height'].includes(key) ?
+                    parseFloat(element.value) :
+                    ['upper_board_quantity', 'lower_board_quantity', 'closure_quantity'].includes(key) ?
+                    parseInt(element.value) :
+                    element.value;
+            }
+        });
+
         try {
-            const palletId = document.getElementById('palletId')?.value;
-            const formElements = {
-                name: document.getElementById('palletName'),
-                company_id: document.getElementById('companySelect'),
-                price: document.getElementById('price'),
-                board_thickness: document.getElementById('boardThickness'),
-                upper_board_length: document.getElementById('upperBoardLength'),
-                upper_board_width: document.getElementById('upperBoardWidth'),
-                upper_board_quantity: document.getElementById('upperBoardQuantity'),
-                lower_board_length: document.getElementById('lowerBoardLength'),
-                lower_board_width: document.getElementById('lowerBoardWidth'),
-                lower_board_quantity: document.getElementById('lowerBoardQuantity'),
-                closure_length: document.getElementById('closureLength'),
-                closure_width: document.getElementById('closureWidth'),
-                closure_quantity: document.getElementById('closureQuantity'),
-                block_length: document.getElementById('blockLength'),
-                block_width: document.getElementById('blockWidth'),
-                block_height: document.getElementById('blockHeight')
-            };
-
-            const palletData = {};
-            Object.entries(formElements).forEach(([key, element]) => {
-                if (element) {
-                    palletData[key] = ['price', 'board_thickness', 'upper_board_length', 'upper_board_width',
-                                    'lower_board_length', 'lower_board_width', 'closure_length', 'closure_width',
-                                    'block_length', 'block_width', 'block_height'].includes(key) ?
-                        parseFloat(element.value) || 0 :
-                        ['upper_board_quantity', 'lower_board_quantity', 'closure_quantity'].includes(key) ?
-                        parseInt(element.value) || 0 :
-                        element.value;
-                }
-            });
-
             const response = await fetch(palletId ? `/api/pallets/${palletId}` : '/api/pallets', {
                 method: palletId ? 'PUT' : 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -255,27 +154,29 @@ document.addEventListener('DOMContentLoaded', function() {
             });
 
             if (response.ok) {
-                location.reload();
+                window.location.reload();
             } else {
                 const errorData = await response.json();
                 alert(errorData.message || 'Palet kaydedilirken bir hata oluştu');
             }
         } catch (error) {
-            console.error('Kaydetme hatası:', error);
+            console.error('Hata:', error);
             alert('İşlem sırasında bir hata oluştu');
         }
     };
 
-    // Add save button event listener if button exists
-    const saveButton = document.getElementById('savePallet');
-    if (saveButton) {
-        saveButton.addEventListener('click', handleSavePallet);
-    }
+    // Add save button event listener
+    document.getElementById('savePallet')?.addEventListener('click', handleSavePallet);
 
-    // Edit pallet handler
+    // CRUD operation handlers
+    const handleViewPallet = (e) => {
+        const palletId = e.currentTarget.dataset.id;
+        window.location.href = `/pallets/${palletId}`;
+    };
+
     const handleEditPallet = async (e) => {
+        const palletId = e.currentTarget.dataset.id;
         try {
-            const palletId = e.currentTarget.dataset.id;
             const response = await fetch(`/api/pallets/${palletId}`);
             if (!response.ok) throw new Error('Palet bilgileri alınamadı');
             
@@ -284,47 +185,47 @@ document.addEventListener('DOMContentLoaded', function() {
                 const element = document.getElementById(key) || 
                               document.getElementById(`pallet${key.charAt(0).toUpperCase() + key.slice(1)}`);
                 if (element) {
-                    element.value = value || '';
+                    element.value = value;
                 }
             });
 
-            const modalElement = document.getElementById('palletModal');
-            if (modalElement) {
-                const modal = bootstrap.Modal.getInstance(modalElement) || new bootstrap.Modal(modalElement);
-                modal.show();
-                calculateDesi();
-            }
+            palletModal?.show();
+            calculateDesi(); // Calculate and display desi values when editing
         } catch (error) {
-            console.error('Düzenleme hatası:', error);
+            console.error('Hata:', error);
             alert('Palet bilgileri yüklenirken bir hata oluştu');
         }
     };
 
-    // Delete pallet handler
     const handleDeletePallet = async (e) => {
         if (confirm('Bu paleti silmek istediğinizden emin misiniz?')) {
+            const palletId = e.currentTarget.dataset.id;
             try {
-                const palletId = e.currentTarget.dataset.id;
                 const response = await fetch(`/api/pallets/${palletId}`, {
                     method: 'DELETE'
                 });
 
                 if (response.ok) {
-                    location.reload();
+                    window.location.reload();
                 } else {
                     const errorData = await response.json();
                     alert(errorData.message || 'Palet silinirken bir hata oluştu');
                 }
             } catch (error) {
-                console.error('Silme hatası:', error);
+                console.error('Hata:', error);
                 alert('İşlem sırasında bir hata oluştu');
             }
         }
     };
 
     // Add event listeners to action buttons
+    document.querySelectorAll('.view-pallet').forEach(btn => 
+        btn.addEventListener('click', handleViewPallet));
     document.querySelectorAll('.edit-pallet').forEach(btn => 
         btn.addEventListener('click', handleEditPallet));
     document.querySelectorAll('.delete-pallet').forEach(btn => 
         btn.addEventListener('click', handleDeletePallet));
+
+    // Initial filtering
+    filterAndSortPallets();
 });
