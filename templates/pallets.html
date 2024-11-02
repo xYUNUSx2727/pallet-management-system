@@ -8,9 +8,6 @@
             <a href="{{ url_for('export_pallets_csv') }}" class="btn btn-secondary">
                 <i class="fas fa-file-csv me-2"></i>CSV Olarak İndir
             </a>
-            <a href="{{ url_for('export_pallets_pdf') }}" class="btn btn-secondary">
-                <i class="fas fa-file-pdf me-2"></i>PDF Olarak İndir
-            </a>
         </div>
         <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#palletModal">
             <i class="fas fa-plus me-2"></i>Palet Ekle
@@ -75,14 +72,13 @@
 </div>
 
 <!-- Pallet List -->
-<div class="pallet-list" id="palletsList">
+<div id="palletsList">
     {% for pallet in pallets %}
     {% set price_per_desi = (pallet.price / pallet.total_volume) if pallet.total_volume and pallet.total_volume > 0 else 0 %}
     <div class="pallet-item card mb-3" data-company-id="{{ pallet.company_id }}" 
          data-price="{{ pallet.price }}" data-volume="{{ pallet.total_volume or 0 }}" 
          data-price-per-desi="{{ price_per_desi }}">
-        <div class="card-header pallet-header" data-bs-toggle="modal" 
-             data-bs-target="#actionModal-{{ pallet.id }}" role="button">
+        <div class="card-header">
             <div class="d-flex justify-content-between align-items-center">
                 <h3 class="card-title mb-0">{{ pallet.name }}</h3>
                 <div class="pallet-meta">
@@ -101,6 +97,17 @@
                     <div class="info-group mb-3">
                         <label>Toplam Hacim:</label>
                         <span>{{ "%.2f"|format(pallet.total_volume or 0) }} desi</span>
+                    </div>
+                    <div class="btn-group">
+                        <a href="{{ url_for('pallet_details', pallet_id=pallet.id) }}" class="btn btn-info">
+                            <i class="fas fa-eye me-2"></i>Detaylar
+                        </a>
+                        <button class="btn btn-secondary edit-pallet" data-id="{{ pallet.id }}">
+                            <i class="fas fa-edit me-2"></i>Düzenle
+                        </button>
+                        <button class="btn btn-danger delete-pallet" data-id="{{ pallet.id }}">
+                            <i class="fas fa-trash me-2"></i>Sil
+                        </button>
                     </div>
                 </div>
                 <div class="col-md-6">
@@ -141,31 +148,6 @@
                                 <span>{{ pallet.block_length }}x{{ pallet.block_width }}x{{ pallet.block_height }} cm</span>
                             </div>
                         </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Action Modal for each pallet -->
-    <div class="modal fade" id="actionModal-{{ pallet.id }}" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">{{ pallet.name }} - İşlemler</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="d-grid gap-2">
-                        <a href="{{ url_for('pallet_details', pallet_id=pallet.id) }}" class="btn btn-info">
-                            <i class="fas fa-eye me-2"></i>Detayları Görüntüle
-                        </a>
-                        <button class="btn btn-secondary edit-pallet" data-id="{{ pallet.id }}" data-bs-dismiss="modal">
-                            <i class="fas fa-edit me-2"></i>Düzenle
-                        </button>
-                        <button class="btn btn-danger delete-pallet" data-id="{{ pallet.id }}" data-bs-dismiss="modal">
-                            <i class="fas fa-trash me-2"></i>Sil
-                        </button>
                     </div>
                 </div>
             </div>

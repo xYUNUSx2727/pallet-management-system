@@ -3,78 +3,90 @@ let filterElements;
 
 // Define the filtering and sorting function
 const filterAndSortPallets = function() {
-    // Only proceed if we're on the pallets page
-    const palletsList = document.getElementById('palletsList');
-    if (!palletsList) return;
-
-    const searchTerm = filterElements.searchName?.value.toLowerCase() || '';
-    const companyId = filterElements.filterCompany?.value || '';
-    const minPrice = parseFloat(filterElements.minPrice?.value) || 0;
-    const maxPrice = parseFloat(filterElements.maxPrice?.value) || Infinity;
-    const sortOrder = filterElements.sortOrder?.value || 'name_asc';
-
-    const items = palletsList.querySelectorAll('.pallet-item');
-    let visibleCount = 0;
-
-    // Filter items
-    items.forEach(item => {
-        const companyMatch = !companyId || item.dataset.companyId === companyId;
-        const price = parseFloat(item.dataset.price) || 0;
-        const priceMatch = price >= minPrice && (maxPrice === Infinity || price <= maxPrice);
-        const nameMatch = item.querySelector('.card-title')
-            ?.textContent.toLowerCase().includes(searchTerm);
-
-        if (companyMatch && priceMatch && nameMatch) {
-            item.style.display = '';
-            visibleCount++;
-        } else {
-            item.style.display = 'none';
-        }
-    });
-
     try {
+        // Only proceed if we're on the pallets page
+        const palletsList = document.getElementById('palletsList');
+        if (!palletsList) {
+            console.warn('Palet listesi bulunamadı');
+            return;
+        }
+
+        const searchTerm = filterElements.searchName?.value?.toLowerCase() || '';
+        const companyId = filterElements.filterCompany?.value || '';
+        const minPrice = parseFloat(filterElements.minPrice?.value) || 0;
+        const maxPrice = parseFloat(filterElements.maxPrice?.value) || Infinity;
+        const sortOrder = filterElements.sortOrder?.value || 'name_asc';
+
+        const items = palletsList.querySelectorAll('.pallet-item');
+        let visibleCount = 0;
+
+        // Filter items
+        items.forEach(item => {
+            try {
+                const companyMatch = !companyId || item.dataset.companyId === companyId;
+                const price = parseFloat(item.dataset.price) || 0;
+                const priceMatch = price >= minPrice && (maxPrice === Infinity || price <= maxPrice);
+                const nameMatch = item.querySelector('.card-title')
+                    ?.textContent.toLowerCase().includes(searchTerm);
+
+                if (companyMatch && priceMatch && nameMatch) {
+                    item.style.display = '';
+                    visibleCount++;
+                } else {
+                    item.style.display = 'none';
+                }
+            } catch (error) {
+                console.error('Öğe filtreleme hatası:', error);
+            }
+        });
+
         // Convert NodeList to Array for sorting
         const itemsArray = Array.from(items);
 
         // Sort items
         itemsArray.sort((a, b) => {
-            const aValue = a.dataset;
-            const bValue = b.dataset;
-            
-            switch(sortOrder) {
-                case 'name_asc':
-                    return (a.querySelector('.card-title')?.textContent || '')
-                        .localeCompare(b.querySelector('.card-title')?.textContent || '');
-                case 'name_desc':
-                    return (b.querySelector('.card-title')?.textContent || '')
-                        .localeCompare(a.querySelector('.card-title')?.textContent || '');
-                case 'price_asc':
-                    return (parseFloat(aValue.price) || 0) - (parseFloat(bValue.price) || 0);
-                case 'price_desc':
-                    return (parseFloat(bValue.price) || 0) - (parseFloat(aValue.price) || 0);
-                case 'volume_asc':
-                    return (parseFloat(aValue.volume) || 0) - (parseFloat(bValue.volume) || 0);
-                case 'volume_desc':
-                    return (parseFloat(bValue.volume) || 0) - (parseFloat(aValue.volume) || 0);
-                case 'price_per_desi_asc':
-                    return (parseFloat(aValue.pricePerDesi) || 0) - (parseFloat(bValue.pricePerDesi) || 0);
-                case 'price_per_desi_desc':
-                    return (parseFloat(bValue.pricePerDesi) || 0) - (parseFloat(aValue.pricePerDesi) || 0);
-                default:
-                    return 0;
+            try {
+                const aValue = a.dataset;
+                const bValue = b.dataset;
+                
+                switch(sortOrder) {
+                    case 'name_asc':
+                        return (a.querySelector('.card-title')?.textContent || '')
+                            .localeCompare(b.querySelector('.card-title')?.textContent || '');
+                    case 'name_desc':
+                        return (b.querySelector('.card-title')?.textContent || '')
+                            .localeCompare(a.querySelector('.card-title')?.textContent || '');
+                    case 'price_asc':
+                        return (parseFloat(aValue.price) || 0) - (parseFloat(bValue.price) || 0);
+                    case 'price_desc':
+                        return (parseFloat(bValue.price) || 0) - (parseFloat(aValue.price) || 0);
+                    case 'volume_asc':
+                        return (parseFloat(aValue.volume) || 0) - (parseFloat(bValue.volume) || 0);
+                    case 'volume_desc':
+                        return (parseFloat(bValue.volume) || 0) - (parseFloat(aValue.volume) || 0);
+                    case 'price_per_desi_asc':
+                        return (parseFloat(aValue.pricePerDesi) || 0) - (parseFloat(bValue.pricePerDesi) || 0);
+                    case 'price_per_desi_desc':
+                        return (parseFloat(bValue.pricePerDesi) || 0) - (parseFloat(aValue.pricePerDesi) || 0);
+                    default:
+                        return 0;
+                }
+            } catch (error) {
+                console.error('Sıralama hatası:', error);
+                return 0;
             }
         });
 
         // Update DOM with sorted items
         itemsArray.forEach(item => palletsList.appendChild(item));
-    } catch (error) {
-        console.error('Sıralama hatası:', error);
-    }
 
-    // Show/hide no results message
-    const noResultsElement = document.getElementById('noResults');
-    if (noResultsElement) {
-        noResultsElement.classList.toggle('d-none', visibleCount > 0);
+        // Show/hide no results message
+        const noResultsElement = document.getElementById('noResults');
+        if (noResultsElement) {
+            noResultsElement.classList.toggle('d-none', visibleCount > 0);
+        }
+    } catch (error) {
+        console.error('Filtreleme ve sıralama hatası:', error);
     }
 };
 
@@ -144,30 +156,34 @@ function calculateDesi() {
 
 document.addEventListener('DOMContentLoaded', function() {
     try {
-        // Initialize filter elements only if we're on the pallets page
         const palletsList = document.getElementById('palletsList');
-        if (palletsList) {
-            filterElements = {
-                searchName: document.getElementById('searchName'),
-                filterCompany: document.getElementById('filterCompany'),
-                minPrice: document.getElementById('minPrice'),
-                maxPrice: document.getElementById('maxPrice'),
-                sortOrder: document.getElementById('sortOrder')
-            };
-
-            // Add filter event listeners only if elements exist
-            Object.values(filterElements).forEach(element => {
-                if (element) {
-                    element.addEventListener('change', filterAndSortPallets);
-                    if (element.tagName === 'INPUT') {
-                        element.addEventListener('keyup', filterAndSortPallets);
-                    }
-                }
-            });
-
-            // Initial filtering
-            filterAndSortPallets();
+        if (!palletsList) {
+            console.warn('Palet listesi bulunamadı');
+            return;
         }
+
+        // Initialize filter elements
+        filterElements = {
+            searchName: document.getElementById('searchName'),
+            filterCompany: document.getElementById('filterCompany'),
+            minPrice: document.getElementById('minPrice'),
+            maxPrice: document.getElementById('maxPrice'),
+            sortOrder: document.getElementById('sortOrder'),
+            noResults: document.getElementById('noResults')
+        };
+
+        // Add filter event listeners
+        Object.entries(filterElements).forEach(([key, element]) => {
+            if (element && key !== 'noResults') {
+                element.addEventListener('change', filterAndSortPallets);
+                if (element.tagName === 'INPUT') {
+                    element.addEventListener('keyup', filterAndSortPallets);
+                }
+            }
+        });
+
+        // Initial filtering
+        filterAndSortPallets();
         
         // Initialize modals and add event listeners for the pallet form
         const palletModal = document.getElementById('palletModal');
@@ -193,7 +209,7 @@ document.addEventListener('DOMContentLoaded', function() {
             palletModal.addEventListener('shown.bs.modal', calculateDesi);
         }
     } catch (error) {
-        console.error('Initialization error:', error);
+        console.error('Sayfa yüklenirken bir hata oluştu:', error);
     }
 
     // Save pallet handler
@@ -239,7 +255,7 @@ document.addEventListener('DOMContentLoaded', function() {
             });
 
             if (response.ok) {
-                window.location.reload();
+                location.reload();
             } else {
                 const errorData = await response.json();
                 alert(errorData.message || 'Palet kaydedilirken bir hata oluştu');
@@ -294,7 +310,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
 
                 if (response.ok) {
-                    window.location.reload();
+                    location.reload();
                 } else {
                     const errorData = await response.json();
                     alert(errorData.message || 'Palet silinirken bir hata oluştu');
