@@ -26,47 +26,66 @@ document.addEventListener('DOMContentLoaded', function() {
             if (response.ok) {
                 location.reload();
             } else {
-                alert('Firma kaydedilirken bir hata oluştu');
+                const errorData = await response.json();
+                throw new Error(errorData.message || 'Firma kaydedilirken bir hata oluştu');
             }
         } catch (error) {
-            console.error('Hata:', error);
+            alert('Hata: ' + (error.message || 'Bilinmeyen bir hata oluştu'));
         }
     });
 
     // Edit Company
     document.querySelectorAll('.edit-company').forEach(button => {
         button.addEventListener('click', async (e) => {
-            const companyId = e.target.dataset.id;
-            const response = await fetch(`/api/companies/${companyId}`);
-            const company = await response.json();
+            try {
+                const companyId = e.target.dataset.id;
+                if (!companyId) {
+                    throw new Error('Firma ID bulunamadı');
+                }
 
-            document.getElementById('companyId').value = company.id;
-            document.getElementById('companyName').value = company.name;
-            document.getElementById('companyEmail').value = company.contact_email;
+                const response = await fetch(`/api/companies/${companyId}`);
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.message || 'Firma bilgileri alınamadı');
+                }
 
-            companyModal.show();
+                const company = await response.json();
+                document.getElementById('companyId').value = company.id;
+                document.getElementById('companyName').value = company.name;
+                document.getElementById('companyEmail').value = company.contact_email;
+
+                companyModal.show();
+            } catch (error) {
+                alert('Hata: ' + (error.message || 'Bilinmeyen bir hata oluştu'));
+            }
         });
     });
 
     // Delete Company
     document.querySelectorAll('.delete-company').forEach(button => {
         button.addEventListener('click', async (e) => {
-            if (confirm('Bu firmayı silmek istediğinizden emin misiniz?')) {
-                const companyId = e.target.dataset.id;
-                
-                try {
-                    const response = await fetch(`/api/companies/${companyId}`, {
-                        method: 'DELETE'
-                    });
-
-                    if (response.ok) {
-                        location.reload();
-                    } else {
-                        alert('Firma silinirken bir hata oluştu');
-                    }
-                } catch (error) {
-                    console.error('Hata:', error);
+            try {
+                if (!confirm('Bu firmayı silmek istediğinizden emin misiniz?')) {
+                    return;
                 }
+
+                const companyId = e.target.dataset.id;
+                if (!companyId) {
+                    throw new Error('Firma ID bulunamadı');
+                }
+
+                const response = await fetch(`/api/companies/${companyId}`, {
+                    method: 'DELETE'
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.message || 'Firma silinirken bir hata oluştu');
+                }
+
+                location.reload();
+            } catch (error) {
+                alert('Hata: ' + (error.message || 'Bilinmeyen bir hata oluştu'));
             }
         });
     });
