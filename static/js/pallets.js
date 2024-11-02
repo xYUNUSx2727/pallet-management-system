@@ -41,14 +41,15 @@ const filterAndSortPallets = function() {
             filterElements.noResults.classList.toggle('d-none', visibleCount > 0);
         }
     } catch (error) {
-        alert(`Filtreleme işlemi sırasında bir hata oluştu: ${error.message}`);
+        const errorMessage = error.message || 'Filtreleme işlemi sırasında bir hata oluştu';
+        alert(errorMessage);
     }
 };
 
 function validateMeasurements(measurements) {
     for (const [key, value] of Object.entries(measurements)) {
         if (isNaN(value) || value < 0) {
-            throw new Error(`Geçersiz ${key} değeri`);
+            throw new Error(`${key} geçersiz veya negatif bir değer içeriyor`);
         }
     }
 }
@@ -100,7 +101,8 @@ function calculateDesi() {
             }
         });
     } catch (error) {
-        alert(`Desi hesaplama hatası: ${error.message}`);
+        const errorMessage = error.message || 'Desi hesaplama sırasında bir hata oluştu';
+        alert(errorMessage);
     }
 }
 
@@ -161,15 +163,16 @@ document.addEventListener('DOMContentLoaded', function() {
             button.addEventListener('click', (e) => {
                 try {
                     if (!e.target.dataset.bsTarget) {
-                        throw new Error('Geçersiz accordion hedefi');
+                        throw new Error('Accordion hedef elementi bulunamadı');
                     }
                     const target = document.querySelector(e.target.dataset.bsTarget);
                     if (!target) {
-                        throw new Error('Accordion içeriği bulunamadı');
+                        throw new Error('Accordion içerik elementi bulunamadı');
                     }
                     new bootstrap.Collapse(target);
                 } catch (error) {
-                    alert(`Accordion hatası: ${error.message}`);
+                    const errorMessage = error.message || 'Accordion açılırken bir hata oluştu';
+                    alert(errorMessage);
                 }
             });
         });
@@ -224,13 +227,13 @@ document.addEventListener('DOMContentLoaded', function() {
                          'block_length', 'block_width', 'block_height'].includes(key)) {
                         const numValue = parseFloat(value);
                         if (isNaN(numValue) || numValue < 0) {
-                            throw new Error(`Geçersiz ${key} değeri`);
+                            throw new Error(`${key} için geçersiz değer girildi`);
                         }
                         palletData[key] = numValue;
                     } else if (['upper_board_quantity', 'lower_board_quantity', 'closure_quantity'].includes(key)) {
                         const numValue = parseInt(value);
                         if (isNaN(numValue) || numValue < 0) {
-                            throw new Error(`Geçersiz ${key} değeri`);
+                            throw new Error(`${key} için geçersiz değer girildi`);
                         }
                         palletData[key] = numValue;
                     } else {
@@ -251,7 +254,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 window.location.reload();
             } catch (error) {
-                alert(`Palet kaydetme hatası: ${error.message}`);
+                const errorMessage = error.message || 'Bilinmeyen bir hata oluştu';
+                alert(`Palet kaydetme hatası: ${errorMessage}`);
             }
         };
 
@@ -270,7 +274,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 window.location.href = `/pallets/${palletId}`;
             } catch (error) {
-                alert(`Palet görüntüleme hatası: ${error.message}`);
+                const errorMessage = error.message || 'Bilinmeyen bir hata oluştu';
+                alert(`Palet görüntüleme hatası: ${errorMessage}`);
             }
         };
 
@@ -302,7 +307,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 palletModal.show();
                 calculateDesi();
             } catch (error) {
-                alert(`Palet düzenleme hatası: ${error.message}`);
+                const errorMessage = error.message || 'Bilinmeyen bir hata oluştu';
+                alert(`Palet düzenleme hatası: ${errorMessage}`);
             }
         };
 
@@ -328,7 +334,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 window.location.reload();
             } catch (error) {
-                alert(`Palet silme hatası: ${error.message}`);
+                const errorMessage = error.message || 'Bilinmeyen bir hata oluştu';
+                alert(`Palet silme hatası: ${errorMessage}`);
             }
         };
 
@@ -346,6 +353,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Initial filtering
         filterAndSortPallets();
     } catch (error) {
-        alert(`Sayfa yüklenirken bir hata oluştu: ${error.message}`);
+        const errorMessage = error.message || 'Bilinmeyen bir hata oluştu';
+        alert(`Sayfa yüklenirken bir hata oluştu: ${errorMessage}`);
     }
 });
