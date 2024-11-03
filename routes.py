@@ -155,9 +155,136 @@ def manage_company(company_id):
 @app.route('/pallets')
 @login_required
 def pallets():
-    pallets = Pallet.query.join(Company).filter(Company.user_id == current_user.id).all()
-    companies = Company.query.filter_by(user_id=current_user.id).all()
-    return render_template('pallets.html', pallets=pallets, companies=companies)
+    try:
+        # Get pallets only for the current user's companies
+        pallets = Pallet.query.join(Company).filter(Company.user_id == current_user.id).all()
+        companies = Company.query.filter_by(user_id=current_user.id).all()
+        return render_template('pallets.html', pallets=pallets, companies=companies)
+    except Exception as e:
+        flash('Paletler yüklenirken bir hata oluştu', 'danger')
+        return redirect(url_for('dashboard'))
+
+@app.route('/api/pallets', methods=['POST'])
+@login_required
+def create_pallet():
+    try:
+        data = request.get_json()
+        
+        # Verify company ownership
+        company = Company.query.filter_by(id=data.get('company_id'), user_id=current_user.id).first()
+        if not company:
+            return jsonify({'message': 'Geçersiz firma'}), 404
+        
+        pallet = Pallet(
+            name=data['name'],
+            company_id=company.id,
+            price=data['price'],
+            board_thickness=data['board_thickness'],
+            upper_board_length=data['upper_board_length'],
+            upper_board_width=data['upper_board_width'],
+            upper_board_quantity=data['upper_board_quantity'],
+            lower_board_length=data['lower_board_length'],
+            lower_board_width=data['lower_board_width'],
+            lower_board_quantity=data['lower_board_quantity'],
+            closure_length=data['closure_length'],
+            closure_width=data['closure_width'],
+            closure_quantity=data['closure_quantity'],
+            block_length=data['block_length'],
+            block_width=data['block_width'],
+            block_height=data['block_height']
+        )
+        
+        # Calculate volumes
+        volumes = calculate_component_volumes(pallet)
+        pallet.upper_board_desi = volumes['upper_board_desi']
+        pallet.lower_board_desi = volumes['lower_board_desi']
+        pallet.closure_desi = volumes['closure_desi']
+        pallet.block_desi = volumes['block_desi']
+        pallet.total_volume = volumes['total_desi']
+        
+        db.session.add(pallet)
+        db.session.commit()
+        return jsonify({'message': 'Palet başarıyla eklendi', 'id': pallet.id}), 201
+    except KeyError as e:
+        return jsonify({'message': f'Eksik alan: {str(e)}'}), 400
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'message': str(e)}), 500
+
+@app.route('/api/pallets/<int:pallet_id>', methods=['GET', 'PUT', 'DELETE'])
+@login_required
+def manage_pallet(pallet_id):
+    try:
+        pallet = Pallet.query.join(Company).filter(
+            Pallet.id == pallet_id,
+            Company.user_id == current_user.id
+        ).first()
+        
+        if not pallet:
+            return jsonify({'message': 'Palet bulunamadı'}), 404
+
+        if request.method == 'GET':
+            return jsonify({
+                'id': pallet.id,
+                'name': pallet.name,
+                'company_id': pallet.company_id,
+                'price': pallet.price,
+                'board_thickness': pallet.board_thickness,
+                'upper_board_length': pallet.upper_board_length,
+                'upper_board_width': pallet.upper_board_width,
+                'upper_board_quantity': pallet.upper_board_quantity,
+                'lower_board_length': pallet.lower_board_length,
+                'lower_board_width': pallet.lower_board_width,
+                'lower_board_quantity': pallet.lower_board_quantity,
+                'closure_length': pallet.closure_length,
+                'closure_width': pallet.closure_width,
+                'closure_quantity': pallet.closure_quantity,
+                'block_length': pallet.block_length,
+                'block_width': pallet.block_width,
+                'block_height': pallet.block_height,
+            })
+        elif request.method == 'PUT':
+            data = request.get_json()
+            
+            # Verify company ownership
+            company = Company.query.filter_by(id=data.get('company_id'), user_id=current_user.id).first()
+            if not company:
+                return jsonify({'message': 'Geçersiz firma'}), 404
+            
+            # Update pallet fields
+            for key, value in data.items():
+                setattr(pallet, key, value)
+            
+            # Recalculate volumes
+            volumes = calculate_component_volumes(pallet)
+            pallet.upper_board_desi = volumes['upper_board_desi']
+            pallet.lower_board_desi = volumes['lower_board_desi']
+            pallet.closure_desi = volumes['closure_desi']
+            pallet.block_desi = volumes['block_desi']
+            pallet.total_volume = volumes['total_desi']
+            
+            db.session.commit()
+            return jsonify({'message': 'Palet güncellendi'})
+        else:  # DELETE
+            db.session.delete(pallet)
+            db.session.commit()
+            return jsonify({'message': 'Palet silindi'})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'message': str(e)}), 500
+
+@app.route('/pallets/<int:pallet_id>')
+@login_required
+def pallet_details(pallet_id):
+    try:
+        pallet = Pallet.query.join(Company).filter(
+            Pallet.id == pallet_id,
+            Company.user_id == current_user.id
+        ).first_or_404()
+        return render_template('pallet_details.html', pallet=pallet)
+    except Exception as e:
+        flash('Palet detayları yüklenirken bir hata oluştu', 'danger')
+        return redirect(url_for('pallets'))
 
 @app.route('/export/pallets/csv')
 @login_required
