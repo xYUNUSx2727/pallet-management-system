@@ -193,19 +193,19 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 const palletName = palletNameInput.value.trim();
                 if (!palletName) {
-                    throw new Error('Palet adı boş olamaz');
+                    throw new Error('Palet adı boş bırakılamaz');
                 }
 
                 // Get company ID from select
-                const companyId = document.getElementById('companySelect')?.value;
-                if (!companyId) {
+                const companySelect = document.getElementById('companySelect');
+                if (!companySelect || !companySelect.value) {
                     throw new Error('Lütfen bir firma seçin');
                 }
 
                 // Get form data
                 const palletData = {
                     name: palletName,
-                    company_id: parseInt(companyId),
+                    company_id: parseInt(companySelect.value),
                     price: parseFloat(document.getElementById('price').value) || 0,
                     board_thickness: parseFloat(document.getElementById('boardThickness').value) || 0,
                     upper_board_length: parseFloat(document.getElementById('upperBoardLength').value) || 0,
@@ -222,10 +222,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     block_height: parseFloat(document.getElementById('blockHeight').value) || 0
                 };
 
-                // Validate all fields have values
+                // Validate all measurements are greater than 0
                 for (const [key, value] of Object.entries(palletData)) {
-                    if (value === 0 || isNaN(value)) {
-                        throw new Error(`${key} için geçerli bir değer giriniz`);
+                    if (key === 'name' || key === 'company_id') continue;
+                    if (!value || value <= 0) {
+                        throw new Error(`${key.split('_').join(' ')} için geçerli bir değer giriniz`);
                     }
                 }
 
