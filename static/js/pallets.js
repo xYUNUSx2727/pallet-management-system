@@ -41,7 +41,7 @@ const filterAndSortPallets = function() {
             filterElements.noResults.classList.toggle('d-none', visibleCount > 0);
         }
 
-        // Update export links with current filter parameters
+        // Update export links
         updateExportLinks();
     } catch (error) {
         console.error('Filtreleme hatası:', error);
@@ -83,7 +83,6 @@ function updateExportLinks() {
 
 function calculateDesi() {
     try {
-        // Get individual measurements first
         const boardThickness = parseFloat(document.getElementById('boardThickness')?.value) || 0;
         const upperBoardLength = parseFloat(document.getElementById('upperBoardLength')?.value) || 0;
         const upperBoardWidth = parseFloat(document.getElementById('upperBoardWidth')?.value) || 0;
@@ -98,7 +97,6 @@ function calculateDesi() {
         const blockWidth = parseFloat(document.getElementById('blockWidth')?.value) || 0;
         const blockHeight = parseFloat(document.getElementById('blockHeight')?.value) || 0;
 
-        // Calculate individual sections
         let upperDesi = 0;
         if (boardThickness && upperBoardLength && upperBoardWidth && upperBoardQuantity) {
             upperDesi = (upperBoardLength * upperBoardWidth * boardThickness * upperBoardQuantity) / 1000;
@@ -123,7 +121,6 @@ function calculateDesi() {
             document.getElementById('blockDesi').textContent = blockDesi.toFixed(2);
         }
 
-        // Calculate total
         const totalDesi = upperDesi + lowerDesi + closureDesi + blockDesi;
         document.getElementById('totalDesi').textContent = totalDesi.toFixed(2);
     } catch (error) {
@@ -188,49 +185,49 @@ document.addEventListener('DOMContentLoaded', function() {
         // Save pallet handler with improved validation
         const handleSavePallet = async () => {
             try {
-                // Get company ID from select
-                const companyId = document.getElementById('companySelect').value;
-                if (!companyId) {
-                    throw new Error('Lütfen bir firma seçin');
-                }
-
                 // Get and validate name field first
-                const palletName = document.getElementById('palletName')?.value?.trim();
+                const palletNameInput = document.getElementById('palletName');
+                if (!palletNameInput) {
+                    throw new Error('Palet adı alanı bulunamadı');
+                }
+                
+                const palletName = palletNameInput.value.trim();
                 if (!palletName) {
                     throw new Error('Palet adı boş olamaz');
                 }
 
-                // Get form data
-                const form = document.getElementById('palletForm');
-                if (!form) {
-                    throw new Error('Palet formu bulunamadı');
+                // Get company ID from select
+                const companyId = document.getElementById('companySelect')?.value;
+                if (!companyId) {
+                    throw new Error('Lütfen bir firma seçin');
                 }
 
+                // Get form data
                 const palletData = {
-                    name: palletName,  // Use validated name
+                    name: palletName,
                     company_id: parseInt(companyId),
-                    price: parseFloat(document.getElementById('price').value),
-                    board_thickness: parseFloat(document.getElementById('boardThickness').value),
-                    upper_board_length: parseFloat(document.getElementById('upperBoardLength').value),
-                    upper_board_width: parseFloat(document.getElementById('upperBoardWidth').value),
-                    upper_board_quantity: parseInt(document.getElementById('upperBoardQuantity').value),
-                    lower_board_length: parseFloat(document.getElementById('lowerBoardLength').value),
-                    lower_board_width: parseFloat(document.getElementById('lowerBoardWidth').value),
-                    lower_board_quantity: parseInt(document.getElementById('lowerBoardQuantity').value),
-                    closure_length: parseFloat(document.getElementById('closureLength').value),
-                    closure_width: parseFloat(document.getElementById('closureWidth').value),
-                    closure_quantity: parseInt(document.getElementById('closureQuantity').value),
-                    block_length: parseFloat(document.getElementById('blockLength').value),
-                    block_width: parseFloat(document.getElementById('blockWidth').value),
-                    block_height: parseFloat(document.getElementById('blockHeight').value)
+                    price: parseFloat(document.getElementById('price').value) || 0,
+                    board_thickness: parseFloat(document.getElementById('boardThickness').value) || 0,
+                    upper_board_length: parseFloat(document.getElementById('upperBoardLength').value) || 0,
+                    upper_board_width: parseFloat(document.getElementById('upperBoardWidth').value) || 0,
+                    upper_board_quantity: parseInt(document.getElementById('upperBoardQuantity').value) || 0,
+                    lower_board_length: parseFloat(document.getElementById('lowerBoardLength').value) || 0,
+                    lower_board_width: parseFloat(document.getElementById('lowerBoardWidth').value) || 0,
+                    lower_board_quantity: parseInt(document.getElementById('lowerBoardQuantity').value) || 0,
+                    closure_length: parseFloat(document.getElementById('closureLength').value) || 0,
+                    closure_width: parseFloat(document.getElementById('closureWidth').value) || 0,
+                    closure_quantity: parseInt(document.getElementById('closureQuantity').value) || 0,
+                    block_length: parseFloat(document.getElementById('blockLength').value) || 0,
+                    block_width: parseFloat(document.getElementById('blockWidth').value) || 0,
+                    block_height: parseFloat(document.getElementById('blockHeight').value) || 0
                 };
 
-                // Validate all fields
-                Object.entries(palletData).forEach(([key, value]) => {
-                    if (value === null || value === undefined || isNaN(value)) {
+                // Validate all fields have values
+                for (const [key, value] of Object.entries(palletData)) {
+                    if (value === 0 || isNaN(value)) {
                         throw new Error(`${key} için geçerli bir değer giriniz`);
                     }
-                });
+                }
 
                 const palletId = document.getElementById('palletId')?.value;
                 const response = await fetch(palletId ? `/api/pallets/${palletId}` : '/api/pallets', {
@@ -251,7 +248,15 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         };
 
-        // Add event listener to save button
+        // Add event listeners to form and save button
+        const palletForm = document.getElementById('palletForm');
+        if (palletForm) {
+            palletForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                handleSavePallet();
+            });
+        }
+
         const saveButton = document.getElementById('savePallet');
         if (saveButton) {
             saveButton.addEventListener('click', handleSavePallet);
