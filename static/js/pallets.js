@@ -44,10 +44,7 @@ const filterAndSortPallets = function() {
         // Update export links with current filter parameters
         updateExportLinks();
     } catch (error) {
-        const errorMessage = error?.message || (Object.keys(error).length === 0 ? 
-            'Sunucu yanıt vermedi' : 'Bilinmeyen bir hata oluştu');
         console.error('Filtreleme hatası:', error);
-        alert('Filtreleme hatası: ' + errorMessage);
     }
 };
 
@@ -80,10 +77,7 @@ function updateExportLinks() {
             csvLink.href = `${baseUrl}?${params.toString()}`;
         }
     } catch (error) {
-        const errorMessage = error?.message || (Object.keys(error).length === 0 ? 
-            'Sunucu yanıt vermedi' : 'Bilinmeyen bir hata oluştu');
         console.error('Export link güncelleme hatası:', error);
-        alert('Export link güncelleme hatası: ' + errorMessage);
     }
 }
 
@@ -102,75 +96,48 @@ function validateMeasurements(measurements) {
 function calculateDesi() {
     try {
         // Get all measurement inputs
-        const inputIds = [
+        const measurements = {};
+        const inputs = [
             'boardThickness', 'upperBoardLength', 'upperBoardWidth', 'upperBoardQuantity',
             'lowerBoardLength', 'lowerBoardWidth', 'lowerBoardQuantity',
             'closureLength', 'closureWidth', 'closureQuantity',
             'blockLength', 'blockWidth', 'blockHeight'
         ];
 
-        const measurements = {};
-        const measurementLabels = {
-            'boardThickness': 'Tahta Kalınlığı',
-            'upperBoardLength': 'Üst Tahta Uzunluğu',
-            'upperBoardWidth': 'Üst Tahta Genişliği',
-            'upperBoardQuantity': 'Üst Tahta Adedi',
-            'lowerBoardLength': 'Alt Tahta Uzunluğu',
-            'lowerBoardWidth': 'Alt Tahta Genişliği',
-            'lowerBoardQuantity': 'Alt Tahta Adedi',
-            'closureLength': 'Kapatma Uzunluğu',
-            'closureWidth': 'Kapatma Genişliği',
-            'closureQuantity': 'Kapatma Adedi',
-            'blockLength': 'Takoz Uzunluğu',
-            'blockWidth': 'Takoz Genişliği',
-            'blockHeight': 'Takoz Yüksekliği'
-        };
-
-        inputIds.forEach(id => {
+        // Only calculate if all values are present and valid
+        for (const id of inputs) {
             const element = document.getElementById(id);
-            if (!element) {
-                throw new Error(`${measurementLabels[id]} için gerekli alan bulunamadı`);
-            }
+            if (!element) continue;
+            
             const value = parseFloat(element.value);
-            if (isNaN(value)) {
-                throw new Error(`${measurementLabels[id]} için geçerli bir sayı giriniz`);
+            if (!isNaN(value) && value > 0) {
+                measurements[id] = value;
             }
-            measurements[measurementLabels[id]] = value;
-        });
+        }
 
-        validateMeasurements(measurements);
+        // Only proceed if we have all required measurements
+        if (Object.keys(measurements).length === inputs.length) {
+            // Calculate volumes
+            const upperDesi = (measurements.upperBoardLength * measurements.upperBoardWidth * 
+                            measurements.boardThickness * measurements.upperBoardQuantity) / 1000;
+            const lowerDesi = (measurements.lowerBoardLength * measurements.lowerBoardWidth * 
+                            measurements.boardThickness * measurements.lowerBoardQuantity) / 1000;
+            const closureDesi = (measurements.closureLength * measurements.closureWidth * 
+                              measurements.boardThickness * measurements.closureQuantity) / 1000;
+            const blockDesi = (measurements.blockLength * measurements.blockWidth * 
+                            measurements.blockHeight * 9) / 1000;
+            const totalDesi = upperDesi + lowerDesi + closureDesi + blockDesi;
 
-        // Calculate volumes
-        const upperDesi = (measurements['Üst Tahta Uzunluğu'] * measurements['Üst Tahta Genişliği'] * 
-                          measurements['Tahta Kalınlığı'] * measurements['Üst Tahta Adedi']) / 1000;
-        const lowerDesi = (measurements['Alt Tahta Uzunluğu'] * measurements['Alt Tahta Genişliği'] * 
-                          measurements['Tahta Kalınlığı'] * measurements['Alt Tahta Adedi']) / 1000;
-        const closureDesi = (measurements['Kapatma Uzunluğu'] * measurements['Kapatma Genişliği'] * 
-                           measurements['Tahta Kalınlığı'] * measurements['Kapatma Adedi']) / 1000;
-        const blockDesi = (measurements['Takoz Uzunluğu'] * measurements['Takoz Genişliği'] * 
-                         measurements['Takoz Yüksekliği'] * 9) / 1000;
-        const totalDesi = upperDesi + lowerDesi + closureDesi + blockDesi;
-
-        // Update UI
-        const desiElements = {
-            'upperBoardDesi': upperDesi,
-            'lowerBoardDesi': lowerDesi,
-            'closureDesi': closureDesi,
-            'blockDesi': blockDesi,
-            'totalDesi': totalDesi
-        };
-
-        Object.entries(desiElements).forEach(([id, value]) => {
-            const element = document.getElementById(id);
-            if (element) {
-                element.textContent = value.toFixed(2);
-            }
-        });
+            // Update UI only if calculation succeeded
+            document.getElementById('upperBoardDesi').textContent = upperDesi.toFixed(2);
+            document.getElementById('lowerBoardDesi').textContent = lowerDesi.toFixed(2);
+            document.getElementById('closureDesi').textContent = closureDesi.toFixed(2);
+            document.getElementById('blockDesi').textContent = blockDesi.toFixed(2);
+            document.getElementById('totalDesi').textContent = totalDesi.toFixed(2);
+        }
     } catch (error) {
-        const errorMessage = error?.message || (Object.keys(error).length === 0 ? 
-            'Sunucu yanıt vermedi' : 'Bilinmeyen bir hata oluştu');
         console.error('Desi hesaplama hatası:', error);
-        alert('Desi hesaplama hatası: ' + errorMessage);
+        // Don't show error messages for incomplete calculations
     }
 }
 
@@ -214,7 +181,11 @@ document.addEventListener('DOMContentLoaded', function() {
         measurementInputs.forEach(id => {
             const element = document.getElementById(id);
             if (element) {
-                element.addEventListener('input', calculateDesi);
+                let timeout;
+                element.addEventListener('input', () => {
+                    clearTimeout(timeout);
+                    timeout = setTimeout(calculateDesi, 500); // Add 500ms delay
+                });
             }
         });
 
@@ -223,7 +194,11 @@ document.addEventListener('DOMContentLoaded', function() {
             if (element && !['noResults', 'palletsList', 'palletsAccordion'].includes(key)) {
                 element.addEventListener('change', filterAndSortPallets);
                 if (element.tagName === 'INPUT') {
-                    element.addEventListener('keyup', filterAndSortPallets);
+                    let timeout;
+                    element.addEventListener('input', () => {
+                        clearTimeout(timeout);
+                        timeout = setTimeout(filterAndSortPallets, 300);
+                    });
                 }
             }
         });
@@ -268,10 +243,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 window.location.reload();
             } catch (error) {
-                const errorMessage = error?.message || (Object.keys(error).length === 0 ? 
-                    'Sunucu yanıt vermedi' : 'Bilinmeyen bir hata oluştu');
                 console.error('Palet kaydetme hatası:', error);
-                alert('Palet kaydetme hatası: ' + errorMessage);
+                alert('Palet kaydetme hatası: ' + (error.message || 'Bilinmeyen bir hata oluştu'));
             }
         };
 
@@ -282,100 +255,86 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         document.querySelectorAll('.view-pallet').forEach(btn => {
-            if (btn) {
-                btn.addEventListener('click', async (e) => {
-                    try {
-                        const palletId = e.currentTarget.dataset.id;
-                        if (!palletId) {
-                            throw new Error('Palet ID bulunamadı');
-                        }
-                        window.location.href = `/pallets/${palletId}`;
-                    } catch (error) {
-                        const errorMessage = error?.message || (Object.keys(error).length === 0 ? 
-                            'Sunucu yanıt vermedi' : 'Bilinmeyen bir hata oluştu');
-                        console.error('Görüntüleme hatası:', error);
-                        alert('Görüntüleme hatası: ' + errorMessage);
+            btn.addEventListener('click', async (e) => {
+                try {
+                    const palletId = e.currentTarget.dataset.id;
+                    if (!palletId) {
+                        throw new Error('Palet ID bulunamadı');
                     }
-                });
-            }
+                    window.location.href = `/pallets/${palletId}`;
+                } catch (error) {
+                    console.error('Görüntüleme hatası:', error);
+                    alert('Görüntüleme hatası: ' + (error.message || 'Bilinmeyen bir hata oluştu'));
+                }
+            });
         });
 
         document.querySelectorAll('.edit-pallet').forEach(btn => {
-            if (btn) {
-                btn.addEventListener('click', async (e) => {
-                    try {
-                        const palletId = e.currentTarget.dataset.id;
-                        if (!palletId) {
-                            throw new Error('Palet ID bulunamadı');
-                        }
-
-                        const response = await fetch(`/api/pallets/${palletId}`);
-                        if (!response.ok) {
-                            const errorData = await response.json();
-                            throw new Error(errorData.message || 'Palet bilgileri alınamadı');
-                        }
-
-                        const pallet = await response.json();
-                        Object.entries(pallet).forEach(([key, value]) => {
-                            const element = document.getElementById(key) || 
-                                      document.getElementById(`pallet${key.charAt(0).toUpperCase() + key.slice(1)}`);
-                            if (element) {
-                                element.value = value;
-                            }
-                        });
-
-                        calculateDesi();
-                        palletModal.show();
-                    } catch (error) {
-                        const errorMessage = error?.message || (Object.keys(error).length === 0 ? 
-                            'Sunucu yanıt vermedi' : 'Bilinmeyen bir hata oluştu');
-                        console.error('Düzenleme hatası:', error);
-                        alert('Düzenleme hatası: ' + errorMessage);
+            btn.addEventListener('click', async (e) => {
+                try {
+                    const palletId = e.currentTarget.dataset.id;
+                    if (!palletId) {
+                        throw new Error('Palet ID bulunamadı');
                     }
-                });
-            }
+
+                    const response = await fetch(`/api/pallets/${palletId}`);
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.message || 'Palet bilgileri alınamadı');
+                    }
+
+                    const pallet = await response.json();
+                    Object.entries(pallet).forEach(([key, value]) => {
+                        const element = document.getElementById(key) || 
+                                  document.getElementById(`pallet${key.charAt(0).toUpperCase() + key.slice(1)}`);
+                        if (element) {
+                            element.value = value;
+                        }
+                    });
+
+                    calculateDesi();
+                    palletModal.show();
+                } catch (error) {
+                    console.error('Düzenleme hatası:', error);
+                    alert('Düzenleme hatası: ' + (error.message || 'Bilinmeyen bir hata oluştu'));
+                }
+            });
         });
 
         document.querySelectorAll('.delete-pallet').forEach(btn => {
-            if (btn) {
-                btn.addEventListener('click', async (e) => {
-                    try {
-                        if (!confirm('Bu paleti silmek istediğinizden emin misiniz?')) {
-                            return;
-                        }
-
-                        const palletId = e.currentTarget.dataset.id;
-                        if (!palletId) {
-                            throw new Error('Palet ID bulunamadı');
-                        }
-
-                        const response = await fetch(`/api/pallets/${palletId}`, {
-                            method: 'DELETE'
-                        });
-
-                        if (!response.ok) {
-                            const errorData = await response.json();
-                            throw new Error(errorData.message || 'Palet silinirken bir hata oluştu');
-                        }
-
-                        window.location.reload();
-                    } catch (error) {
-                        const errorMessage = error?.message || (Object.keys(error).length === 0 ? 
-                            'Sunucu yanıt vermedi' : 'Bilinmeyen bir hata oluştu');
-                        console.error('Silme hatası:', error);
-                        alert('Silme hatası: ' + errorMessage);
+            btn.addEventListener('click', async (e) => {
+                try {
+                    if (!confirm('Bu paleti silmek istediğinizden emin misiniz?')) {
+                        return;
                     }
-                });
-            }
+
+                    const palletId = e.currentTarget.dataset.id;
+                    if (!palletId) {
+                        throw new Error('Palet ID bulunamadı');
+                    }
+
+                    const response = await fetch(`/api/pallets/${palletId}`, {
+                        method: 'DELETE'
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.message || 'Palet silinirken bir hata oluştu');
+                    }
+
+                    window.location.reload();
+                } catch (error) {
+                    console.error('Silme hatası:', error);
+                    alert('Silme hatası: ' + (error.message || 'Bilinmeyen bir hata oluştu'));
+                }
+            });
         });
 
         // Initial filtering and export link setup
         filterAndSortPallets();
         updateExportLinks();
     } catch (error) {
-        const errorMessage = error?.message || (Object.keys(error).length === 0 ? 
-            'Sunucu yanıt vermedi' : 'Bilinmeyen bir hata oluştu');
         console.error('Başlatma hatası:', error);
-        alert('Başlatma hatası: ' + errorMessage);
+        alert('Başlatma hatası: ' + (error.message || 'Bilinmeyen bir hata oluştu'));
     }
 });
