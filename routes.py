@@ -158,3 +158,211 @@ def pallets():
     pallets = Pallet.query.join(Company).filter(Company.user_id == current_user.id).all()
     companies = Company.query.filter_by(user_id=current_user.id).all()
     return render_template('pallets.html', pallets=pallets, companies=companies)
+
+@app.route('/export/pallets/csv')
+@login_required
+def export_pallets_csv():
+    # Get filter parameters
+    company_id = request.args.get('company_id', '')
+    min_price = request.args.get('min_price', type=float, default=0)
+    max_price = request.args.get('max_price', type=float)
+    search_term = request.args.get('search', '').lower()
+
+    # Build query with filters
+    query = Pallet.query.join(Company).filter(Company.user_id == current_user.id)
+    if company_id:
+        query = query.filter(Pallet.company_id == company_id)
+    if min_price is not None:
+        query = query.filter(Pallet.price >= min_price)
+    if max_price is not None:
+        query = query.filter(Pallet.price <= max_price)
+    if search_term:
+        query = query.filter(Pallet.name.ilike(f'%{search_term}%'))
+
+    pallets = query.all()
+
+    # Create CSV in memory
+    output = io.StringIO()
+    writer = csv.writer(output)
+    
+    # Write headers
+    writer.writerow([
+        'ID', 'İsim', 'Firma', 'Fiyat (TL)', 'Toplam Hacim (desi)',
+        'Tahta Kalınlığı', 
+        'Üst Tahta (UxGxA)', 'Alt Tahta (UxGxA)', 
+        'Kapatma (UxGxA)', 'Takoz (UxGxY)'
+    ])
+    
+    # Write data
+    for pallet in pallets:
+        writer.writerow([
+            pallet.id, pallet.name, pallet.company.name, 
+            f"{pallet.price:.2f}", f"{pallet.total_volume:.2f}",
+            pallet.board_thickness,
+            f"{pallet.upper_board_length}x{pallet.upper_board_width}x{pallet.upper_board_quantity}",
+            f"{pallet.lower_board_length}x{pallet.lower_board_width}x{pallet.lower_board_quantity}",
+            f"{pallet.closure_length}x{pallet.closure_width}x{pallet.closure_quantity}",
+            f"{pallet.block_length}x{pallet.block_width}x{pallet.block_height}"
+        ])
+    
+    # Prepare response
+    output.seek(0)
+    return send_file(
+        io.BytesIO(output.getvalue().encode('utf-8')),
+        mimetype='text/csv',
+        as_attachment=True,
+        download_name=f'paletler_{datetime.now().strftime("%Y%m%d_%H%M%S")}.csv'
+    )
+
+@app.route('/export/pallets/pdf')
+@login_required
+def export_pallets_pdf():
+    # Get filter parameters
+    company_id = request.args.get('company_id', '')
+    min_price = request.args.get('min_price', type=float, default=0)
+    max_price = request.args.get('max_price', type=float)
+    search_term = request.args.get('search', '').lower()
+
+    # Build query with filters
+    query = Pallet.query.join(Company).filter(Company.user_id == current_user.id)
+    if company_id:
+        query = query.filter(Pallet.company_id == company_id)
+    if min_price is not None:
+        query = query.filter(Pallet.price >= min_price)
+    if max_price is not None:
+        query = query.filter(Pallet.price <= max_price)
+    if search_term:
+        query = query.filter(Pallet.name.ilike(f'%{search_term}%'))
+
+    pallets = query.all()
+
+    # Create PDF in memory
+    buffer = io.BytesIO()
+    
+    # Get company name if single company selected
+    company_name = None
+    if company_id:
+        company = Company.query.get(company_id)
+        if company:
+            company_name = company.name
+
+    # Create PDF document
+    doc = SimpleDocTemplate(
+        buffer,
+        pagesize=landscape(A4),
+        rightMargin=1*cm,
+        leftMargin=1*cm,
+        topMargin=1*cm,
+        bottomMargin=1*cm
+    )
+
+    # Create elements list
+    elements = []
+
+    # Add title
+    title_style = ParagraphStyle(
+        'CustomTitle',
+        parent=getSampleStyleSheet()['Title'],
+        fontName='DejaVuSans-Bold',
+        fontSize=16,
+        spaceAfter=30,
+        alignment=1
+    )
+    
+    # Set title based on filter
+    title = f"{company_name} Palet Ölçüleri" if company_name else "Palet Ölçüleri"
+    elements.append(Paragraph(title, title_style))
+
+    # Define data for table
+    data = [
+        ['ID', 'İsim', 'Firma', 'Fiyat', 'Hacim', 'Üst Tahta', 'Alt Tahta', 'Kapatma', 'Takoz', 'Desi']
+    ]
+
+    # Add pallet data
+    for pallet in pallets:
+        upper_boards = (
+            f"Kalınlık: {pallet.board_thickness} cm\n"
+            f"Uzunluk: {pallet.upper_board_length} cm\n"
+            f"Genişlik: {pallet.upper_board_width} cm\n"
+            f"Adet: {pallet.upper_board_quantity}"
+        )
+
+        lower_boards = (
+            f"Kalınlık: {pallet.board_thickness} cm\n"
+            f"Uzunluk: {pallet.lower_board_length} cm\n"
+            f"Genişlik: {pallet.lower_board_width} cm\n"
+            f"Adet: {pallet.lower_board_quantity}"
+        )
+
+        closure_boards = (
+            f"Kalınlık: {pallet.board_thickness} cm\n"
+            f"Uzunluk: {pallet.closure_length} cm\n"
+            f"Genişlik: {pallet.closure_width} cm\n"
+            f"Adet: {pallet.closure_quantity}"
+        )
+
+        blocks = (
+            f"Uzunluk: {pallet.block_length} cm\n"
+            f"Genişlik: {pallet.block_width} cm\n"
+            f"Yükseklik: {pallet.block_height} cm"
+        )
+
+        row = [
+            str(pallet.id),
+            pallet.name,
+            pallet.company.name,
+            f"{pallet.price:.2f} TL",
+            f"{pallet.total_volume:.2f}",
+            upper_boards,
+            lower_boards,
+            closure_boards,
+            blocks,
+            f"{pallet.total_volume:.2f}"
+        ]
+        data.append(row)
+
+    # Create table
+    available_width = 27.7*cm  # A4 landscape width - margins
+    col_widths = [
+        1.5*cm,    # ID
+        3*cm,      # İsim
+        3*cm,      # Firma
+        2*cm,      # Fiyat
+        2*cm,      # Hacim
+        4.05*cm,   # Üst Tahta
+        4.05*cm,   # Alt Tahta
+        4.05*cm,   # Kapatma
+        2*cm,      # Takoz
+        2.05*cm    # Desi
+    ]
+    
+    table = Table(data, colWidths=col_widths)
+    
+    # Add style to table
+    style = TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('FONTNAME', (0, 0), (-1, 0), 'DejaVuSans-Bold'),
+        ('FONTNAME', (0, 1), (-1, -1), 'DejaVuSans'),
+        ('FONTSIZE', (0, 0), (-1, -1), 8),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black),
+        ('BOX', (0, 0), (-1, -1), 2, colors.black),
+        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.lightgrey])
+    ])
+    table.setStyle(style)
+    
+    elements.append(table)
+    
+    # Generate PDF
+    doc.build(elements)
+    
+    # Prepare response
+    buffer.seek(0)
+    return send_file(
+        buffer,
+        mimetype='application/pdf',
+        as_attachment=True,
+        download_name=f'paletler_{datetime.now().strftime("%Y%m%d_%H%M%S")}.pdf'
+    )
