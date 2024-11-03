@@ -45,30 +45,39 @@ def register():
         return redirect(url_for('dashboard'))
         
     if request.method == 'POST':
-        username = request.form.get('username')
-        email = request.form.get('email')
-        password = request.form.get('password')
-        confirm_password = request.form.get('confirm_password')
-        
-        if password != confirm_password:
-            flash('Şifreler eşleşmiyor', 'danger')
-            return render_template('register.html')
+        try:
+            username = request.form.get('username')
+            email = request.form.get('email')
+            password = request.form.get('password')
+            confirm_password = request.form.get('confirm_password')
             
-        if User.query.filter_by(username=username).first():
-            flash('Bu kullanıcı adı zaten kullanılıyor', 'danger')
-            return render_template('register.html')
+            if not username or not email or not password or not confirm_password:
+                flash('Tüm alanları doldurun', 'danger')
+                return render_template('register.html')
             
-        if User.query.filter_by(email=email).first():
-            flash('Bu e-posta adresi zaten kullanılıyor', 'danger')
+            if password != confirm_password:
+                flash('Şifreler eşleşmiyor', 'danger')
+                return render_template('register.html')
+                
+            if User.query.filter_by(username=username).first():
+                flash('Bu kullanıcı adı zaten kullanılıyor', 'danger')
+                return render_template('register.html')
+                
+            if User.query.filter_by(email=email).first():
+                flash('Bu e-posta adresi zaten kullanılıyor', 'danger')
+                return render_template('register.html')
+            
+            user = User(username=username, email=email)
+            user.set_password(password)
+            db.session.add(user)
+            db.session.commit()
+            
+            flash('Kayıt başarılı! Şimdi giriş yapabilirsiniz.', 'success')
+            return redirect(url_for('login'))
+        except Exception as e:
+            db.session.rollback()
+            flash('Kayıt sırasında bir hata oluştu. Lütfen tekrar deneyin.', 'danger')
             return render_template('register.html')
-        
-        user = User(username=username, email=email)
-        user.set_password(password)
-        db.session.add(user)
-        db.session.commit()
-        
-        flash('Kayıt başarılı! Şimdi giriş yapabilirsiniz.', 'success')
-        return redirect(url_for('login'))
     
     return render_template('register.html')
 
@@ -93,5 +102,3 @@ def dashboard():
 def companies():
     companies = Company.query.filter_by(user_id=current_user.id).all()
     return render_template('companies.html', companies=companies)
-
-# ... rest of the existing routes ...

@@ -32,8 +32,7 @@ def load_user(user_id):
 
 with app.app_context():
     import models
-    # Drop and recreate all tables
-    db.drop_all()
+    # Create tables if they don't exist
     db.create_all()
 
 from routes import *
