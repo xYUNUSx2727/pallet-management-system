@@ -17,7 +17,7 @@ const filterAndSortPallets = function() {
 
         const items = document.querySelectorAll('tr[data-company-id], .accordion-item');
         if (!items.length) {
-            throw new Error('Palet listesi bulunamadı');
+            return; // No items to filter
         }
 
         let visibleCount = 0;
@@ -140,7 +140,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         const palletModal = new bootstrap.Modal(palletModalElement);
 
-        // Initialize filter elements with validation
+        // Initialize filter elements
         filterElements = {
             searchName: document.getElementById('searchName'),
             filterCompany: document.getElementById('filterCompany'),
@@ -194,6 +194,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     throw new Error('Lütfen bir firma seçin');
                 }
 
+                // Get and validate name field first
+                const palletName = document.getElementById('palletName')?.value?.trim();
+                if (!palletName) {
+                    throw new Error('Palet adı boş olamaz');
+                }
+
                 // Get form data
                 const form = document.getElementById('palletForm');
                 if (!form) {
@@ -201,7 +207,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
 
                 const palletData = {
-                    name: document.getElementById('palletName').value,
+                    name: palletName,  // Use validated name
                     company_id: parseInt(companyId),
                     price: parseFloat(document.getElementById('price').value),
                     board_thickness: parseFloat(document.getElementById('boardThickness').value),
