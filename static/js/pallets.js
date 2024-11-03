@@ -152,14 +152,6 @@ document.addEventListener('DOMContentLoaded', function() {
             palletsAccordion: document.getElementById('palletsAccordion')
         };
 
-        // Validate required filter elements
-        const requiredElements = ['searchName', 'filterCompany', 'sortOrder'];
-        requiredElements.forEach(elementId => {
-            if (!filterElements[elementId]) {
-                throw new Error(`${elementId} elementi bulunamadı`);
-            }
-        });
-
         // Add input event listeners for real-time desi calculations
         const measurementInputs = [
             'boardThickness', 'upperBoardLength', 'upperBoardWidth', 'upperBoardQuantity',
@@ -174,7 +166,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 let timeout;
                 element.addEventListener('input', () => {
                     clearTimeout(timeout);
-                    timeout = setTimeout(calculateDesi, 500); // Add 500ms delay
+                    timeout = setTimeout(calculateDesi, 500);
                 });
             }
         });
@@ -193,31 +185,46 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
 
-        // Save pallet handler with improved validation and error handling
+        // Save pallet handler with improved validation
         const handleSavePallet = async () => {
             try {
+                // Get company ID from select
+                const companyId = document.getElementById('companySelect').value;
+                if (!companyId) {
+                    throw new Error('Lütfen bir firma seçin');
+                }
+
+                // Get form data
                 const form = document.getElementById('palletForm');
                 if (!form) {
                     throw new Error('Palet formu bulunamadı');
                 }
 
-                const formData = new FormData(form);
-                const palletData = {};
+                const palletData = {
+                    name: document.getElementById('palletName').value,
+                    company_id: parseInt(companyId),
+                    price: parseFloat(document.getElementById('price').value),
+                    board_thickness: parseFloat(document.getElementById('boardThickness').value),
+                    upper_board_length: parseFloat(document.getElementById('upperBoardLength').value),
+                    upper_board_width: parseFloat(document.getElementById('upperBoardWidth').value),
+                    upper_board_quantity: parseInt(document.getElementById('upperBoardQuantity').value),
+                    lower_board_length: parseFloat(document.getElementById('lowerBoardLength').value),
+                    lower_board_width: parseFloat(document.getElementById('lowerBoardWidth').value),
+                    lower_board_quantity: parseInt(document.getElementById('lowerBoardQuantity').value),
+                    closure_length: parseFloat(document.getElementById('closureLength').value),
+                    closure_width: parseFloat(document.getElementById('closureWidth').value),
+                    closure_quantity: parseInt(document.getElementById('closureQuantity').value),
+                    block_length: parseFloat(document.getElementById('blockLength').value),
+                    block_width: parseFloat(document.getElementById('blockWidth').value),
+                    block_height: parseFloat(document.getElementById('blockHeight').value)
+                };
 
-                for (const [key, value] of formData.entries()) {
-                    if (!value.trim()) {
-                        throw new Error(`${key} alanı boş bırakılamaz`);
+                // Validate all fields
+                Object.entries(palletData).forEach(([key, value]) => {
+                    if (value === null || value === undefined || isNaN(value)) {
+                        throw new Error(`${key} için geçerli bir değer giriniz`);
                     }
-                    if (key !== 'palletName') {
-                        const numValue = parseFloat(value);
-                        if (isNaN(numValue) || numValue <= 0) {
-                            throw new Error(`${key} için geçerli bir pozitif sayı giriniz`);
-                        }
-                        palletData[key] = numValue;
-                    } else {
-                        palletData[key] = value.trim();
-                    }
-                }
+                });
 
                 const palletId = document.getElementById('palletId')?.value;
                 const response = await fetch(palletId ? `/api/pallets/${palletId}` : '/api/pallets', {
@@ -226,9 +233,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     body: JSON.stringify(palletData)
                 });
 
+                const data = await response.json();
                 if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.message || 'Palet kaydedilirken bir hata oluştu');
+                    throw new Error(data.message || 'Palet kaydedilirken bir hata oluştu');
                 }
 
                 window.location.reload();
@@ -238,12 +245,13 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         };
 
-        // Add event listeners to action buttons
+        // Add event listener to save button
         const saveButton = document.getElementById('savePallet');
         if (saveButton) {
             saveButton.addEventListener('click', handleSavePallet);
         }
 
+        // View pallet handler
         document.querySelectorAll('.view-pallet').forEach(btn => {
             btn.addEventListener('click', async (e) => {
                 try {
@@ -259,6 +267,7 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
 
+        // Edit pallet handler
         document.querySelectorAll('.edit-pallet').forEach(btn => {
             btn.addEventListener('click', async (e) => {
                 try {
@@ -291,6 +300,7 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
 
+        // Delete pallet handler
         document.querySelectorAll('.delete-pallet').forEach(btn => {
             btn.addEventListener('click', async (e) => {
                 try {

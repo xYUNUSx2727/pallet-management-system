@@ -90,7 +90,9 @@ def logout():
 
 @app.route('/')
 def index():
-    return redirect(url_for('dashboard'))
+    if current_user.is_authenticated:
+        return redirect(url_for('dashboard'))
+    return redirect(url_for('login'))
 
 @app.route('/dashboard')
 @login_required
@@ -156,7 +158,6 @@ def manage_company(company_id):
 @login_required
 def pallets():
     try:
-        # Get pallets only for the current user's companies
         pallets = Pallet.query.join(Company).filter(Company.user_id == current_user.id).all()
         companies = Company.query.filter_by(user_id=current_user.id).all()
         return render_template('pallets.html', pallets=pallets, companies=companies)
@@ -393,7 +394,7 @@ def export_pallets_pdf():
         fontName='DejaVuSans-Bold',
         fontSize=16,
         spaceAfter=30,
-        alignment=1
+        alignment=1  # Center alignment
     )
     
     # Set title based on filter
@@ -402,94 +403,60 @@ def export_pallets_pdf():
 
     # Define data for table
     data = [
-        ['ID', 'İsim', 'Firma', 'Fiyat', 'Hacim', 'Üst Tahta', 'Alt Tahta', 'Kapatma', 'Takoz', 'Desi']
+        ['ID', 'İsim', 'Firma', 'Fiyat (TL)', 'Toplam Hacim (desi)', 'Ölçüler']
     ]
 
     # Add pallet data
     for pallet in pallets:
-        upper_boards = (
-            f"Kalınlık: {pallet.board_thickness} cm\n"
-            f"Uzunluk: {pallet.upper_board_length} cm\n"
-            f"Genişlik: {pallet.upper_board_width} cm\n"
-            f"Adet: {pallet.upper_board_quantity}"
+        measurements = (
+            f"Üst Tahta: {pallet.upper_board_length}x{pallet.upper_board_width} cm ({pallet.upper_board_quantity} adet)\n"
+            f"Alt Tahta: {pallet.lower_board_length}x{pallet.lower_board_width} cm ({pallet.lower_board_quantity} adet)\n"
+            f"Kapatma: {pallet.closure_length}x{pallet.closure_width} cm ({pallet.closure_quantity} adet)\n"
+            f"Takoz: {pallet.block_length}x{pallet.block_width}x{pallet.block_height} cm"
         )
 
-        lower_boards = (
-            f"Kalınlık: {pallet.board_thickness} cm\n"
-            f"Uzunluk: {pallet.lower_board_length} cm\n"
-            f"Genişlik: {pallet.lower_board_width} cm\n"
-            f"Adet: {pallet.lower_board_quantity}"
-        )
-
-        closure_boards = (
-            f"Kalınlık: {pallet.board_thickness} cm\n"
-            f"Uzunluk: {pallet.closure_length} cm\n"
-            f"Genişlik: {pallet.closure_width} cm\n"
-            f"Adet: {pallet.closure_quantity}"
-        )
-
-        blocks = (
-            f"Uzunluk: {pallet.block_length} cm\n"
-            f"Genişlik: {pallet.block_width} cm\n"
-            f"Yükseklik: {pallet.block_height} cm"
-        )
-
-        row = [
+        data.append([
             str(pallet.id),
             pallet.name,
             pallet.company.name,
-            f"{pallet.price:.2f} TL",
+            f"{pallet.price:.2f}",
             f"{pallet.total_volume:.2f}",
-            upper_boards,
-            lower_boards,
-            closure_boards,
-            blocks,
-            f"{pallet.total_volume:.2f}"
-        ]
-        data.append(row)
+            measurements
+        ])
 
     # Create table
-    available_width = 27.7*cm  # A4 landscape width - margins
-    col_widths = [
-        1.5*cm,    # ID
-        3*cm,      # İsim
-        3*cm,      # Firma
-        2*cm,      # Fiyat
-        2*cm,      # Hacim
-        4.05*cm,   # Üst Tahta
-        4.05*cm,   # Alt Tahta
-        4.05*cm,   # Kapatma
-        2*cm,      # Takoz
-        2.05*cm    # Desi
-    ]
-    
+    col_widths = [1*cm, 3*cm, 3*cm, 2*cm, 2*cm, 15*cm]
     table = Table(data, colWidths=col_widths)
-    
-    # Add style to table
-    style = TableStyle([
+    table.setStyle(TableStyle([
+        ('FONTNAME', (0, 0), (-1, 0), 'DejaVuSans-Bold'),
+        ('FONTNAME', (0, 1), (-1, -1), 'DejaVuSans'),
+        ('FONTSIZE', (0, 0), (-1, -1), 8),
+        ('GRID', (0, 0), (-1, -1), 1, colors.grey),
         ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
         ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
         ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-        ('FONTNAME', (0, 0), (-1, 0), 'DejaVuSans-Bold'),
-        ('FONTNAME', (0, 1), (-1, -1), 'DejaVuSans'),
-        ('FONTSIZE', (0, 0), (-1, -1), 8),
-        ('GRID', (0, 0), (-1, -1), 1, colors.black),
-        ('BOX', (0, 0), (-1, -1), 2, colors.black),
-        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.lightgrey])
-    ])
-    table.setStyle(style)
-    
+        ('ALIGN', (-1, 1), (-1, -1), 'LEFT'),  # Left align the measurements column
+        ('LEFTPADDING', (-1, 1), (-1, -1), 5),
+    ]))
+
     elements.append(table)
-    
-    # Generate PDF
+
+    # Build PDF
     doc.build(elements)
-    
-    # Prepare response
     buffer.seek(0)
+    
     return send_file(
         buffer,
         mimetype='application/pdf',
         as_attachment=True,
         download_name=f'paletler_{datetime.now().strftime("%Y%m%d_%H%M%S")}.pdf'
     )
+
+@app.errorhandler(404)
+def page_not_found(e):
+    return render_template('404.html'), 404
+
+@app.errorhandler(500)
+def internal_server_error(e):
+    return render_template('500.html'), 500
