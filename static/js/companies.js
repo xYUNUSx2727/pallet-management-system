@@ -60,7 +60,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 location.reload();
             } catch (error) {
-                alert('Hata: ' + (error.message || 'Bilinmeyen bir hata oluştu'));
+                const errorMessage = error?.message || (Object.keys(error).length === 0 ? 
+                    'Sunucu yanıt vermedi' : 'Bilinmeyen bir hata oluştu');
+                alert('Hata: ' + errorMessage);
             }
         });
 
@@ -100,7 +102,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
                     companyModal.show();
                 } catch (error) {
-                    alert('Hata: ' + (error.message || 'Bilinmeyen bir hata oluştu'));
+                    const errorMessage = error?.message || (Object.keys(error).length === 0 ? 
+                        'Sunucu yanıt vermedi' : 'Bilinmeyen bir hata oluştu');
+                    alert('Hata: ' + errorMessage);
                 }
             });
         });
@@ -134,11 +138,15 @@ document.addEventListener('DOMContentLoaded', function() {
 
                     location.reload();
                 } catch (error) {
-                    alert('Hata: ' + (error.message || 'Bilinmeyen bir hata oluştu'));
+                    const errorMessage = error?.message || (Object.keys(error).length === 0 ? 
+                        'Sunucu yanıt vermedi' : 'Bilinmeyen bir hata oluştu');
+                    alert('Hata: ' + errorMessage);
                 }
             });
         });
     } catch (error) {
-        alert('Sayfa yüklenirken hata oluştu: ' + (error.message || 'Bilinmeyen bir hata oluştu'));
+        const errorMessage = error?.message || (Object.keys(error).length === 0 ? 
+            'Sunucu yanıt vermedi' : 'Bilinmeyen bir hata oluştu');
+        alert('Sayfa yüklenirken hata oluştu: ' + errorMessage);
     }
 });

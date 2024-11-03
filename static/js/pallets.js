@@ -44,8 +44,10 @@ const filterAndSortPallets = function() {
         // Update export links with current filter parameters
         updateExportLinks();
     } catch (error) {
+        const errorMessage = error?.message || (Object.keys(error).length === 0 ? 
+            'Sunucu yanıt vermedi' : 'Bilinmeyen bir hata oluştu');
         console.error('Filtreleme hatası:', error);
-        alert('Filtreleme hatası: ' + (error.message || 'Bilinmeyen bir hata oluştu'));
+        alert('Filtreleme hatası: ' + errorMessage);
     }
 };
 
@@ -78,7 +80,10 @@ function updateExportLinks() {
             csvLink.href = `${baseUrl}?${params.toString()}`;
         }
     } catch (error) {
+        const errorMessage = error?.message || (Object.keys(error).length === 0 ? 
+            'Sunucu yanıt vermedi' : 'Bilinmeyen bir hata oluştu');
         console.error('Export link güncelleme hatası:', error);
+        alert('Export link güncelleme hatası: ' + errorMessage);
     }
 }
 
@@ -162,8 +167,10 @@ function calculateDesi() {
             }
         });
     } catch (error) {
+        const errorMessage = error?.message || (Object.keys(error).length === 0 ? 
+            'Sunucu yanıt vermedi' : 'Bilinmeyen bir hata oluştu');
         console.error('Desi hesaplama hatası:', error);
-        alert('Desi hesaplama hatası: ' + (error.message || 'Bilinmeyen bir hata oluştu'));
+        alert('Desi hesaplama hatası: ' + errorMessage);
     }
 }
 
@@ -261,8 +268,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 window.location.reload();
             } catch (error) {
+                const errorMessage = error?.message || (Object.keys(error).length === 0 ? 
+                    'Sunucu yanıt vermedi' : 'Bilinmeyen bir hata oluştu');
                 console.error('Palet kaydetme hatası:', error);
-                alert('Palet kaydetme hatası: ' + (error.message || 'Bilinmeyen bir hata oluştu'));
+                alert('Palet kaydetme hatası: ' + errorMessage);
             }
         };
 
@@ -282,8 +291,10 @@ document.addEventListener('DOMContentLoaded', function() {
                         }
                         window.location.href = `/pallets/${palletId}`;
                     } catch (error) {
+                        const errorMessage = error?.message || (Object.keys(error).length === 0 ? 
+                            'Sunucu yanıt vermedi' : 'Bilinmeyen bir hata oluştu');
                         console.error('Görüntüleme hatası:', error);
-                        alert('Görüntüleme hatası: ' + (error.message || 'Bilinmeyen bir hata oluştu'));
+                        alert('Görüntüleme hatası: ' + errorMessage);
                     }
                 });
             }
@@ -316,8 +327,10 @@ document.addEventListener('DOMContentLoaded', function() {
                         calculateDesi();
                         palletModal.show();
                     } catch (error) {
+                        const errorMessage = error?.message || (Object.keys(error).length === 0 ? 
+                            'Sunucu yanıt vermedi' : 'Bilinmeyen bir hata oluştu');
                         console.error('Düzenleme hatası:', error);
-                        alert('Düzenleme hatası: ' + (error.message || 'Bilinmeyen bir hata oluştu'));
+                        alert('Düzenleme hatası: ' + errorMessage);
                     }
                 });
             }
@@ -347,8 +360,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
                         window.location.reload();
                     } catch (error) {
+                        const errorMessage = error?.message || (Object.keys(error).length === 0 ? 
+                            'Sunucu yanıt vermedi' : 'Bilinmeyen bir hata oluştu');
                         console.error('Silme hatası:', error);
-                        alert('Silme hatası: ' + (error.message || 'Bilinmeyen bir hata oluştu'));
+                        alert('Silme hatası: ' + errorMessage);
                     }
                 });
             }
@@ -358,7 +373,9 @@ document.addEventListener('DOMContentLoaded', function() {
         filterAndSortPallets();
         updateExportLinks();
     } catch (error) {
+        const errorMessage = error?.message || (Object.keys(error).length === 0 ? 
+            'Sunucu yanıt vermedi' : 'Bilinmeyen bir hata oluştu');
         console.error('Başlatma hatası:', error);
-        alert('Başlatma hatası: ' + (error.message || 'Bilinmeyen bir hata oluştu'));
+        alert('Başlatma hatası: ' + errorMessage);
     }
 });

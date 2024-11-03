@@ -1,6 +1,6 @@
 from flask import render_template, request, jsonify, flash, redirect, url_for, send_file
 from app import app, db
-from models import Company, Pallet
+from models import Company, Pallet, User
 from utils import calculate_component_volumes
 from datetime import datetime
 from sqlalchemy import func
@@ -13,39 +13,116 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import cm
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
+from flask_login import login_user, login_required, logout_user, current_user
 
 pdfmetrics.registerFont(TTFont('DejaVuSans', '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf'))
 pdfmetrics.registerFont(TTFont('DejaVuSans-Bold', '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf'))
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if current_user.is_authenticated:
+        return redirect(url_for('companies'))
+        
+    if request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password')
+        remember = 'remember' in request.form
+        
+        user = User.query.filter_by(username=username).first()
+        if user and user.check_password(password):
+            login_user(user, remember=remember)
+            flash('Başarıyla giriş yaptınız!', 'success')
+            next_page = request.args.get('next')
+            return redirect(next_page if next_page else url_for('companies'))
+        else:
+            flash('Geçersiz kullanıcı adı veya şifre', 'danger')
+    
+    return render_template('login.html')
+
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if current_user.is_authenticated:
+        return redirect(url_for('companies'))
+        
+    if request.method == 'POST':
+        username = request.form.get('username')
+        email = request.form.get('email')
+        password = request.form.get('password')
+        confirm_password = request.form.get('confirm_password')
+        
+        if password != confirm_password:
+            flash('Şifreler eşleşmiyor', 'danger')
+            return render_template('register.html')
+            
+        if User.query.filter_by(username=username).first():
+            flash('Bu kullanıcı adı zaten kullanılıyor', 'danger')
+            return render_template('register.html')
+            
+        if User.query.filter_by(email=email).first():
+            flash('Bu e-posta adresi zaten kullanılıyor', 'danger')
+            return render_template('register.html')
+        
+        user = User(username=username, email=email)
+        user.set_password(password)
+        db.session.add(user)
+        db.session.commit()
+        
+        flash('Kayıt başarılı! Şimdi giriş yapabilirsiniz.', 'success')
+        return redirect(url_for('login'))
+    
+    return render_template('register.html')
+
+@app.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    flash('Başarıyla çıkış yaptınız', 'success')
+    return redirect(url_for('login'))
 
 @app.route('/')
 def index():
     return redirect(url_for('companies'))
 
 @app.route('/companies')
+@login_required
 def companies():
-    companies = Company.query.all()
+    companies = Company.query.filter_by(user_id=current_user.id).all()
     return render_template('companies.html', companies=companies)
 
 @app.route('/pallets')
+@login_required
 def pallets():
-    pallets = Pallet.query.all()
-    companies = Company.query.all()
+    pallets = Pallet.query.join(Company).filter(Company.user_id == current_user.id).all()
+    companies = Company.query.filter_by(user_id=current_user.id).all()
     return render_template('pallets.html', pallets=pallets, companies=companies)
 
 @app.route('/pallets/<int:pallet_id>')
+@login_required
 def pallet_details(pallet_id):
-    pallet = Pallet.query.get_or_404(pallet_id)
+    pallet = Pallet.query.join(Company).filter(
+        Company.user_id == current_user.id,
+        Pallet.id == pallet_id
+    ).first_or_404()
     return render_template('pallet_details.html', pallet=pallet)
 
 @app.route('/dashboard')
+@login_required
 def dashboard():
+    # Query only current user's data
+    user_companies = Company.query.filter_by(user_id=current_user.id)
+    user_pallets = Pallet.query.join(Company).filter(Company.user_id == current_user.id)
+
     stats = {
-        'total_pallets': Pallet.query.count(),
-        'total_companies': Company.query.count(),
-        'avg_price': db.session.query(func.avg(Pallet.price)).scalar() or 0
+        'total_pallets': user_pallets.count(),
+        'total_companies': user_companies.count(),
+        'avg_price': db.session.query(func.avg(Pallet.price)).join(Company).filter(
+            Company.user_id == current_user.id
+        ).scalar() or 0
     }
 
-    volumes = db.session.query(Pallet.total_volume).all()
+    volumes = db.session.query(Pallet.total_volume).join(Company).filter(
+        Company.user_id == current_user.id
+    ).all()
     if volumes:
         volumes = [v[0] for v in volumes if v[0] is not None]
         min_vol, max_vol = min(volumes), max(volumes)
@@ -64,7 +141,9 @@ def dashboard():
         volume_ranges = []
         volume_distribution = []
 
-    prices = db.session.query(Pallet.price).all()
+    prices = db.session.query(Pallet.price).join(Company).filter(
+        Company.user_id == current_user.id
+    ).all()
     if prices:
         prices = [p[0] for p in prices if p[0] is not None]
         min_price, max_price = min(prices), max(prices)
@@ -83,11 +162,11 @@ def dashboard():
         price_ranges = []
         price_distribution = []
 
-    companies = db.session.query(Company.name).all()
+    companies = db.session.query(Company.name).filter_by(user_id=current_user.id).all()
     companies = [c[0] for c in companies]
     
     company_stats = []
-    for company in Company.query.all():
+    for company in user_companies.all():
         pallets = company.pallets
         if pallets:
             avg_price = sum(p.price for p in pallets) / len(pallets)
@@ -121,6 +200,7 @@ def dashboard():
                          company_stats=company_stats)
 
 @app.route('/export/pallets/csv')
+@login_required
 def export_pallets_csv():
     output = io.StringIO()
     writer = csv.writer(output)
@@ -136,7 +216,7 @@ def export_pallets_csv():
                     'Takoz Uzunluğu (cm)', 'Takoz Genişliği (cm)', 
                     'Takoz Yüksekliği (cm)'])
     
-    pallets = Pallet.query.all()
+    pallets = Pallet.query.join(Company).filter(Company.user_id == current_user.id).all()
     for pallet in pallets:
         volumes = calculate_component_volumes(pallet)
         writer.writerow([
@@ -160,13 +240,14 @@ def export_pallets_csv():
     )
 
 @app.route('/export/pallets/pdf')
+@login_required
 def export_pallets_pdf():
     company_id = request.args.get('company_id', '')
     min_price = request.args.get('min_price', type=float, default=0)
     max_price = request.args.get('max_price', type=float)
     search_term = request.args.get('search', '').lower()
 
-    query = Pallet.query
+    query = Pallet.query.join(Company).filter(Company.user_id == current_user.id)
     if company_id:
         query = query.filter(Pallet.company_id == company_id)
     if min_price is not None:
@@ -238,7 +319,7 @@ def export_pallets_pdf():
     company_name = None
     if company_id:
         company = Company.query.get(company_id)
-        if company:
+        if company and company.user_id == current_user.id:
             company_name = company.name
 
     title = f"{company_name} Palet Ölçüleri" if company_name else "Palet Ölçüleri"
@@ -350,18 +431,20 @@ def export_pallets_pdf():
     )
 
 @app.route('/api/companies', methods=['GET', 'POST'])
+@login_required
 def handle_companies():
     if request.method == 'POST':
         data = request.json
         company = Company(
             name=data['name'],
-            contact_email=data['contact_email']
+            contact_email=data['contact_email'],
+            user_id=current_user.id
         )
         db.session.add(company)
         db.session.commit()
         return jsonify({'message': 'Firma başarıyla oluşturuldu'}), 201
     
-    companies = Company.query.all()
+    companies = Company.query.filter_by(user_id=current_user.id).all()
     return jsonify([{
         'id': c.id,
         'name': c.name,
@@ -369,8 +452,9 @@ def handle_companies():
     } for c in companies])
 
 @app.route('/api/companies/<int:company_id>', methods=['GET', 'PUT', 'DELETE'])
+@login_required
 def handle_company(company_id):
-    company = Company.query.get_or_404(company_id)
+    company = Company.query.filter_by(id=company_id, user_id=current_user.id).first_or_404()
     
     if request.method == 'GET':
         return jsonify({
@@ -392,12 +476,17 @@ def handle_company(company_id):
         return jsonify({'message': 'Firma başarıyla silindi'})
 
 @app.route('/api/pallets', methods=['GET', 'POST'])
+@login_required
 def handle_pallets():
     if request.method == 'POST':
         data = request.json
+        
+        # Verify company belongs to current user
+        company = Company.query.filter_by(id=data['company_id'], user_id=current_user.id).first_or_404()
+        
         pallet = Pallet(
             name=data['name'],
-            company_id=data['company_id'],
+            company_id=company.id,
             board_thickness=data['board_thickness'],
             upper_board_length=data['upper_board_length'],
             upper_board_width=data['upper_board_width'],
@@ -425,7 +514,7 @@ def handle_pallets():
         db.session.commit()
         return jsonify({'message': 'Palet başarıyla oluşturuldu'}), 201
     
-    pallets = Pallet.query.all()
+    pallets = Pallet.query.join(Company).filter(Company.user_id == current_user.id).all()
     return jsonify([{
         'id': p.id,
         'name': p.name,
@@ -449,8 +538,12 @@ def handle_pallets():
     } for p in pallets])
 
 @app.route('/api/pallets/<int:pallet_id>', methods=['GET', 'PUT', 'DELETE'])
+@login_required
 def handle_pallet(pallet_id):
-    pallet = Pallet.query.get_or_404(pallet_id)
+    pallet = Pallet.query.join(Company).filter(
+        Company.user_id == current_user.id,
+        Pallet.id == pallet_id
+    ).first_or_404()
     
     if request.method == 'GET':
         return jsonify({
@@ -478,6 +571,11 @@ def handle_pallet(pallet_id):
     
     elif request.method == 'PUT':
         data = request.json
+        
+        # Verify new company belongs to current user if company_id is being updated
+        if 'company_id' in data:
+            company = Company.query.filter_by(id=data['company_id'], user_id=current_user.id).first_or_404()
+            
         for key, value in data.items():
             setattr(pallet, key, value)
         
@@ -497,8 +595,9 @@ def handle_pallet(pallet_id):
         return jsonify({'message': 'Palet başarıyla silindi'})
 
 @app.route('/api/pallets/update-desi', methods=['POST'])
+@login_required
 def update_all_pallets_desi():
-    pallets = Pallet.query.all()
+    pallets = Pallet.query.join(Company).filter(Company.user_id == current_user.id).all()
     for pallet in pallets:
         volumes = calculate_component_volumes(pallet)
         pallet.upper_board_desi = volumes['upper_board_desi']
