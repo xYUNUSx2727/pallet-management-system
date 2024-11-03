@@ -23,25 +23,25 @@ document.addEventListener('DOMContentLoaded', function() {
             try {
                 const nameInput = document.getElementById('companyName');
                 const emailInput = document.getElementById('companyEmail');
-
+                
                 if (!nameInput || !emailInput) {
                     throw new Error('Form alanları bulunamadı');
                 }
 
-                if (!nameInput.value.trim()) {
+                const name = nameInput.value.trim();
+                const email = emailInput.value.trim();
+                
+                if (!name) {
                     throw new Error('Firma adı boş olamaz');
                 }
-
-                if (!emailInput.value.trim()) {
+                if (!email) {
                     throw new Error('E-posta adresi boş olamaz');
+                }
+                if (!email.includes('@')) {
+                    throw new Error('Geçerli bir e-posta adresi giriniz');
                 }
 
                 const companyId = document.getElementById('companyId')?.value;
-                const companyData = {
-                    name: nameInput.value.trim(),
-                    contact_email: emailInput.value.trim()
-                };
-
                 const url = companyId ? `/api/companies/${companyId}` : '/api/companies';
                 const method = companyId ? 'PUT' : 'POST';
 
@@ -50,28 +50,28 @@ document.addEventListener('DOMContentLoaded', function() {
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify(companyData)
+                    body: JSON.stringify({
+                        name: name,
+                        contact_email: email
+                    })
                 });
 
+                const data = await response.json();
+                
                 if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.message || 'Firma kaydedilirken bir hata oluştu');
+                    throw new Error(data.message || 'Firma kaydedilirken bir hata oluştu');
                 }
 
+                // Success message and reload
+                alert(data.message || 'İşlem başarılı');
                 location.reload();
             } catch (error) {
-                const errorMessage = error?.message || (Object.keys(error).length === 0 ? 
-                    'Sunucu yanıt vermedi' : 'Bilinmeyen bir hata oluştu');
-                alert('Hata: ' + errorMessage);
+                alert('Hata: ' + (error.message || 'Bilinmeyen bir hata oluştu'));
             }
         });
 
         // Edit Company
         const editButtons = document.querySelectorAll('.edit-company');
-        if (editButtons.length === 0) {
-            console.warn('Düzenleme butonları bulunamadı');
-        }
-
         editButtons.forEach(button => {
             button.addEventListener('click', async (e) => {
                 try {
@@ -102,19 +102,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
                     companyModal.show();
                 } catch (error) {
-                    const errorMessage = error?.message || (Object.keys(error).length === 0 ? 
-                        'Sunucu yanıt vermedi' : 'Bilinmeyen bir hata oluştu');
-                    alert('Hata: ' + errorMessage);
+                    alert('Hata: ' + (error.message || 'Bilinmeyen bir hata oluştu'));
                 }
             });
         });
 
         // Delete Company
         const deleteButtons = document.querySelectorAll('.delete-company');
-        if (deleteButtons.length === 0) {
-            console.warn('Silme butonları bulunamadı');
-        }
-
         deleteButtons.forEach(button => {
             button.addEventListener('click', async (e) => {
                 try {
@@ -138,15 +132,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
                     location.reload();
                 } catch (error) {
-                    const errorMessage = error?.message || (Object.keys(error).length === 0 ? 
-                        'Sunucu yanıt vermedi' : 'Bilinmeyen bir hata oluştu');
-                    alert('Hata: ' + errorMessage);
+                    alert('Hata: ' + (error.message || 'Bilinmeyen bir hata oluştu'));
                 }
             });
         });
+
     } catch (error) {
-        const errorMessage = error?.message || (Object.keys(error).length === 0 ? 
-            'Sunucu yanıt vermedi' : 'Bilinmeyen bir hata oluştu');
-        alert('Sayfa yüklenirken hata oluştu: ' + errorMessage);
+        alert('Sayfa yüklenirken hata oluştu: ' + (error.message || 'Bilinmeyen bir hata oluştu'));
     }
 });

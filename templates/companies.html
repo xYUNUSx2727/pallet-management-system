@@ -47,11 +47,11 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <form id="companyForm">
+                <form id="companyForm" onsubmit="return false;">
                     <input type="hidden" id="companyId">
                     <div class="mb-3">
                         <label class="form-label">Firma Adı</label>
-                        <input type="text" class="form-control" id="companyName" required>
+                        <input type="text" class="form-control" id="companyName" required minlength="2" maxlength="100">
                     </div>
                     <div class="mb-3">
                         <label class="form-label">İletişim E-postası</label>

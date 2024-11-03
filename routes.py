@@ -103,6 +103,55 @@ def companies():
     companies = Company.query.filter_by(user_id=current_user.id).all()
     return render_template('companies.html', companies=companies)
 
+@app.route('/api/companies', methods=['POST'])
+@login_required
+def create_company():
+    try:
+        data = request.get_json()
+        company = Company(
+            name=data['name'],
+            contact_email=data['contact_email'],
+            user_id=current_user.id
+        )
+        db.session.add(company)
+        db.session.commit()
+        return jsonify({'message': 'Firma başarıyla eklendi', 'id': company.id}), 201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'message': str(e)}), 400
+
+@app.route('/api/companies/<int:company_id>', methods=['PUT', 'DELETE', 'GET'])
+@login_required
+def manage_company(company_id):
+    company = Company.query.filter_by(id=company_id, user_id=current_user.id).first()
+    if not company:
+        return jsonify({'message': 'Firma bulunamadı'}), 404
+        
+    if request.method == 'GET':
+        return jsonify({
+            'id': company.id,
+            'name': company.name,
+            'contact_email': company.contact_email
+        })
+    elif request.method == 'PUT':
+        try:
+            data = request.get_json()
+            company.name = data['name']
+            company.contact_email = data['contact_email']
+            db.session.commit()
+            return jsonify({'message': 'Firma başarıyla güncellendi'})
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'message': str(e)}), 400
+    else:  # DELETE
+        try:
+            db.session.delete(company)
+            db.session.commit()
+            return jsonify({'message': 'Firma başarıyla silindi'})
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'message': str(e)}), 400
+
 @app.route('/pallets')
 @login_required
 def pallets():
