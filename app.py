@@ -30,9 +30,19 @@ def load_user(user_id):
     from models import User
     return User.query.get(int(user_id))
 
+# Ensure clean shutdown
+@app.teardown_appcontext
+def shutdown_session(exception=None):
+    db.session.remove()
+
 with app.app_context():
     import models
-    # Create tables if they don't exist
+    # Drop and recreate all tables
+    db.drop_all()
     db.create_all()
+    
+    # Import seed data after tables are created
+    from seed_data import seed_data
+    seed_data()
 
 from routes import *
