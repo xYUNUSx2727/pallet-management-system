@@ -81,63 +81,53 @@ function updateExportLinks() {
     }
 }
 
-function validateMeasurements(measurements) {
-    const errors = [];
-    for (const [key, value] of Object.entries(measurements)) {
-        if (isNaN(value) || value <= 0) {
-            errors.push(`${key} geçersiz veya negatif bir değer içeriyor`);
-        }
-    }
-    if (errors.length > 0) {
-        throw new Error(errors.join('\n'));
-    }
-}
-
 function calculateDesi() {
     try {
-        // Get all measurement inputs
-        const measurements = {};
-        const inputs = [
-            'boardThickness', 'upperBoardLength', 'upperBoardWidth', 'upperBoardQuantity',
-            'lowerBoardLength', 'lowerBoardWidth', 'lowerBoardQuantity',
-            'closureLength', 'closureWidth', 'closureQuantity',
-            'blockLength', 'blockWidth', 'blockHeight'
-        ];
+        // Get individual measurements first
+        const boardThickness = parseFloat(document.getElementById('boardThickness')?.value) || 0;
+        const upperBoardLength = parseFloat(document.getElementById('upperBoardLength')?.value) || 0;
+        const upperBoardWidth = parseFloat(document.getElementById('upperBoardWidth')?.value) || 0;
+        const upperBoardQuantity = parseFloat(document.getElementById('upperBoardQuantity')?.value) || 0;
+        const lowerBoardLength = parseFloat(document.getElementById('lowerBoardLength')?.value) || 0;
+        const lowerBoardWidth = parseFloat(document.getElementById('lowerBoardWidth')?.value) || 0;
+        const lowerBoardQuantity = parseFloat(document.getElementById('lowerBoardQuantity')?.value) || 0;
+        const closureLength = parseFloat(document.getElementById('closureLength')?.value) || 0;
+        const closureWidth = parseFloat(document.getElementById('closureWidth')?.value) || 0;
+        const closureQuantity = parseFloat(document.getElementById('closureQuantity')?.value) || 0;
+        const blockLength = parseFloat(document.getElementById('blockLength')?.value) || 0;
+        const blockWidth = parseFloat(document.getElementById('blockWidth')?.value) || 0;
+        const blockHeight = parseFloat(document.getElementById('blockHeight')?.value) || 0;
 
-        // Only calculate if all values are present and valid
-        for (const id of inputs) {
-            const element = document.getElementById(id);
-            if (!element) continue;
-            
-            const value = parseFloat(element.value);
-            if (!isNaN(value) && value > 0) {
-                measurements[id] = value;
-            }
-        }
-
-        // Only proceed if we have all required measurements
-        if (Object.keys(measurements).length === inputs.length) {
-            // Calculate volumes
-            const upperDesi = (measurements.upperBoardLength * measurements.upperBoardWidth * 
-                            measurements.boardThickness * measurements.upperBoardQuantity) / 1000;
-            const lowerDesi = (measurements.lowerBoardLength * measurements.lowerBoardWidth * 
-                            measurements.boardThickness * measurements.lowerBoardQuantity) / 1000;
-            const closureDesi = (measurements.closureLength * measurements.closureWidth * 
-                              measurements.boardThickness * measurements.closureQuantity) / 1000;
-            const blockDesi = (measurements.blockLength * measurements.blockWidth * 
-                            measurements.blockHeight * 9) / 1000;
-            const totalDesi = upperDesi + lowerDesi + closureDesi + blockDesi;
-
-            // Update UI only if calculation succeeded
+        // Calculate individual sections
+        let upperDesi = 0;
+        if (boardThickness && upperBoardLength && upperBoardWidth && upperBoardQuantity) {
+            upperDesi = (upperBoardLength * upperBoardWidth * boardThickness * upperBoardQuantity) / 1000;
             document.getElementById('upperBoardDesi').textContent = upperDesi.toFixed(2);
-            document.getElementById('lowerBoardDesi').textContent = lowerDesi.toFixed(2);
-            document.getElementById('closureDesi').textContent = closureDesi.toFixed(2);
-            document.getElementById('blockDesi').textContent = blockDesi.toFixed(2);
-            document.getElementById('totalDesi').textContent = totalDesi.toFixed(2);
         }
+
+        let lowerDesi = 0;
+        if (boardThickness && lowerBoardLength && lowerBoardWidth && lowerBoardQuantity) {
+            lowerDesi = (lowerBoardLength * lowerBoardWidth * boardThickness * lowerBoardQuantity) / 1000;
+            document.getElementById('lowerBoardDesi').textContent = lowerDesi.toFixed(2);
+        }
+
+        let closureDesi = 0;
+        if (boardThickness && closureLength && closureWidth && closureQuantity) {
+            closureDesi = (closureLength * closureWidth * boardThickness * closureQuantity) / 1000;
+            document.getElementById('closureDesi').textContent = closureDesi.toFixed(2);
+        }
+
+        let blockDesi = 0;
+        if (blockLength && blockWidth && blockHeight) {
+            blockDesi = (blockLength * blockWidth * blockHeight * 9) / 1000;
+            document.getElementById('blockDesi').textContent = blockDesi.toFixed(2);
+        }
+
+        // Calculate total
+        const totalDesi = upperDesi + lowerDesi + closureDesi + blockDesi;
+        document.getElementById('totalDesi').textContent = totalDesi.toFixed(2);
     } catch (error) {
         console.error('Desi hesaplama hatası:', error);
-        // Don't show error messages for incomplete calculations
     }
 }
 
