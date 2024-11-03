@@ -23,13 +23,13 @@
                 <ul class="navbar-nav me-auto">
                     {% if current_user.is_authenticated %}
                     <li class="nav-item">
+                        <a class="nav-link active" href="{{ url_for('dashboard') }}">Ana Sayfa</a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('companies') }}">Firmalar</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('pallets') }}">Paletler</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('dashboard') }}">Analiz Paneli</a>
                     </li>
                     {% endif %}
                 </ul>

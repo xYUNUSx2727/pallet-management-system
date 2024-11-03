@@ -102,3 +102,10 @@ def dashboard():
 def companies():
     companies = Company.query.filter_by(user_id=current_user.id).all()
     return render_template('companies.html', companies=companies)
+
+@app.route('/pallets')
+@login_required
+def pallets():
+    pallets = Pallet.query.join(Company).filter(Company.user_id == current_user.id).all()
+    companies = Company.query.filter_by(user_id=current_user.id).all()
+    return render_template('pallets.html', pallets=pallets, companies=companies)
