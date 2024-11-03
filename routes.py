@@ -161,13 +161,11 @@ def export_pallets_csv():
 
 @app.route('/export/pallets/pdf')
 def export_pallets_pdf():
-    # Get filter parameters from request
     company_id = request.args.get('company_id', '')
     min_price = request.args.get('min_price', type=float, default=0)
     max_price = request.args.get('max_price', type=float)
     search_term = request.args.get('search', '').lower()
 
-    # Build query with filters
     query = Pallet.query
     if company_id:
         query = query.filter(Pallet.company_id == company_id)
@@ -221,8 +219,16 @@ def export_pallets_pdf():
         spaceAfter=30,
         alignment=1
     )
+
+    company_name = None
+    if company_id:
+        company = Company.query.get(company_id)
+        if company:
+            company_name = company.name
+
+    title = f"{company_name} Palet Ölçüleri" if company_name else "Palet Ölçüleri"
+    elements.append(Paragraph(title, title_style))
     
-    elements.append(Paragraph("Palet Yönetim Sistemi - Detaylı Rapor", title_style))
     elements.append(Paragraph(
         f"Oluşturma Tarihi: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
         ParagraphStyle('Date', parent=styles['Normal'], fontName='DejaVuSans', alignment=1, spaceAfter=20)
@@ -247,18 +253,21 @@ def export_pallets_pdf():
         volumes = calculate_component_volumes(pallet)
         
         upper_boards = (
+            f"Kalınlık: {pallet.board_thickness} cm\n"
             f"Uzunluk: {pallet.upper_board_length} cm\n"
             f"Genişlik: {pallet.upper_board_width} cm\n"
             f"Adet: {pallet.upper_board_quantity}"
         )
         
         lower_boards = (
+            f"Kalınlık: {pallet.board_thickness} cm\n"
             f"Uzunluk: {pallet.lower_board_length} cm\n"
             f"Genişlik: {pallet.lower_board_width} cm\n"
             f"Adet: {pallet.lower_board_quantity}"
         )
         
         closure_boards = (
+            f"Kalınlık: {pallet.board_thickness} cm\n"
             f"Uzunluk: {pallet.closure_length} cm\n"
             f"Genişlik: {pallet.closure_width} cm\n"
             f"Adet: {pallet.closure_quantity}"
