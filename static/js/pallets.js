@@ -41,14 +41,15 @@ const filterAndSortPallets = function() {
             filterElements.noResults.classList.toggle('d-none', visibleCount > 0);
         }
     } catch (error) {
-        alert('Filtreleme hatası: ' + error.message);
+        console.error('Filtreleme hatası:', error);
+        alert('Filtreleme hatası: ' + (error.message || 'Bilinmeyen bir hata oluştu'));
     }
 };
 
 function validateMeasurements(measurements) {
     const errors = [];
     for (const [key, value] of Object.entries(measurements)) {
-        if (isNaN(value) || value < 0) {
+        if (isNaN(value) || value <= 0) {
             errors.push(`${key} geçersiz veya negatif bir değer içeriyor`);
         }
     }
@@ -121,7 +122,8 @@ function calculateDesi() {
             }
         });
     } catch (error) {
-        alert('Desi hesaplama hatası: ' + error.message);
+        console.error('Desi hesaplama hatası:', error);
+        alert('Desi hesaplama hatası: ' + (error.message || 'Bilinmeyen bir hata oluştu'));
     }
 }
 
@@ -222,7 +224,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
                     if (id !== 'palletName' && id !== 'companySelect') {
                         const numValue = parseFloat(value);
-                        if (isNaN(numValue) || numValue < 0) {
+                        if (isNaN(numValue) || numValue <= 0) {
                             invalidNumbers.push(label);
                         }
                     }
@@ -243,7 +245,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 const palletId = document.getElementById('palletId')?.value;
                 const palletData = {
                     name: formElements.palletName.value.trim(),
-                    company_id: formElements.companySelect.value,
+                    company_id: parseInt(formElements.companySelect.value),
                     price: parseFloat(formElements.price.value),
                     board_thickness: parseFloat(formElements.boardThickness.value),
                     upper_board_length: parseFloat(formElements.upperBoardLength.value),
@@ -273,7 +275,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 window.location.reload();
             } catch (error) {
-                alert('Palet kaydetme hatası: ' + error.message);
+                console.error('Palet kaydetme hatası:', error);
+                alert('Palet kaydetme hatası: ' + (error.message || 'Bilinmeyen bir hata oluştu'));
             }
         };
 
@@ -294,7 +297,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 window.location.href = `/pallets/${palletId}`;
             } catch (error) {
-                alert('Görüntüleme hatası: ' + error.message);
+                console.error('Görüntüleme hatası:', error);
+                alert('Görüntüleme hatası: ' + (error.message || 'Bilinmeyen bir hata oluştu'));
             }
         };
 
@@ -322,10 +326,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 });
 
-                palletModal.show();
                 calculateDesi();
+                palletModal.show();
             } catch (error) {
-                alert('Düzenleme hatası: ' + error.message);
+                console.error('Düzenleme hatası:', error);
+                alert('Düzenleme hatası: ' + (error.message || 'Bilinmeyen bir hata oluştu'));
             }
         };
 
@@ -351,7 +356,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 window.location.reload();
             } catch (error) {
-                alert('Silme hatası: ' + error.message);
+                console.error('Silme hatası:', error);
+                alert('Silme hatası: ' + (error.message || 'Bilinmeyen bir hata oluştu'));
             }
         };
 
@@ -363,6 +369,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Initial filtering
         filterAndSortPallets();
     } catch (error) {
-        alert('Başlatma hatası: ' + error.message);
+        console.error('Başlatma hatası:', error);
+        alert('Başlatma hatası: ' + (error.message || 'Bilinmeyen bir hata oluştu'));
     }
 });
