@@ -182,11 +182,26 @@ def export_pallets_pdf():
     doc = SimpleDocTemplate(
         buffer,
         pagesize=landscape(A4),
-        rightMargin=30,
-        leftMargin=30,
-        topMargin=30,
-        bottomMargin=30
+        rightMargin=1*cm,
+        leftMargin=1*cm,
+        topMargin=1*cm,
+        bottomMargin=1*cm
     )
+    
+    available_width = 27.7*cm
+    
+    col_widths = [
+        1.5*cm,    # ID
+        3*cm,      # İsim
+        3*cm,      # Firma
+        2*cm,      # Fiyat
+        2*cm,      # Hacim
+        4.05*cm,   # Üst Tahta
+        4.05*cm,   # Alt Tahta
+        4.05*cm,   # Kapatma
+        2*cm,      # Takoz
+        2.05*cm    # Desi
+    ]
     
     styles = getSampleStyleSheet()
     styles.add(ParagraphStyle(
@@ -301,21 +316,7 @@ def export_pallets_pdf():
         ]
         data.append(row)
     
-    col_widths = [
-        1*cm,     # ID
-        2*cm,     # İsim
-        2*cm,     # Firma
-        1.5*cm,   # Fiyat
-        1.5*cm,   # Hacim
-        2.5*cm,   # Üst Tahta
-        2.5*cm,   # Alt Tahta
-        2.5*cm,   # Kapatma
-        2.5*cm,   # Takoz
-        2.5*cm    # Desi
-    ]
-    
     table = Table(data, colWidths=col_widths, repeatRows=1)
-    
     table.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#2196F3')),
         ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
