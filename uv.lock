@@ -401,6 +401,7 @@ dependencies = [
     { name = "reportlab" },
     { name = "requests" },
     { name = "sqlalchemy" },
+    { name = "werkzeug" },
 ]
 
 [package.metadata]
@@ -414,6 +415,7 @@ requires-dist = [
     { name = "reportlab", specifier = ">=4.2.5" },
     { name = "requests" },
     { name = "sqlalchemy" },
+    { name = "werkzeug", specifier = ">=3.0.6" },
 ]
 
 [[package]]

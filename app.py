@@ -25,14 +25,15 @@ login_manager.login_view = 'login'
 login_manager.login_message = 'Lütfen önce giriş yapın.'
 login_manager.login_message_category = 'warning'
 
-with app.app_context():
-    import models
-    # Create tables if they don't exist
-    db.create_all()
-
 @login_manager.user_loader
 def load_user(user_id):
     from models import User
     return User.query.get(int(user_id))
+
+with app.app_context():
+    import models
+    # Drop and recreate all tables
+    db.drop_all()
+    db.create_all()
 
 from routes import *

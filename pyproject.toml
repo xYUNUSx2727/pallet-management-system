@@ -13,4 +13,5 @@ dependencies = [
     "requests",
     "reportlab>=4.2.5",
     "sqlalchemy",
+    "werkzeug>=3.0.6",
 ]
