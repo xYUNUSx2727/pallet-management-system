@@ -161,6 +161,25 @@ def export_pallets_csv():
 
 @app.route('/export/pallets/pdf')
 def export_pallets_pdf():
+    # Get filter parameters from request
+    company_id = request.args.get('company_id', '')
+    min_price = request.args.get('min_price', type=float, default=0)
+    max_price = request.args.get('max_price', type=float)
+    search_term = request.args.get('search', '').lower()
+
+    # Build query with filters
+    query = Pallet.query
+    if company_id:
+        query = query.filter(Pallet.company_id == company_id)
+    if min_price is not None:
+        query = query.filter(Pallet.price >= min_price)
+    if max_price is not None:
+        query = query.filter(Pallet.price <= max_price)
+    if search_term:
+        query = query.filter(Pallet.name.ilike(f'%{search_term}%'))
+
+    pallets = query.all()
+
     buffer = io.BytesIO()
     doc = SimpleDocTemplate(
         buffer,
@@ -223,7 +242,6 @@ def export_pallets_pdf():
     ]
     
     data = [[Paragraph(header, styles['TableHeader']) for header in headers]]
-    pallets = Pallet.query.all()
     
     for pallet in pallets:
         volumes = calculate_component_volumes(pallet)
@@ -444,7 +462,8 @@ def handle_pallet(pallet_id):
             'closure_quantity': pallet.closure_quantity,
             'block_length': pallet.block_length,
             'block_width': pallet.block_width,
-            'block_height': pallet.block_height
+            'block_height': pallet.block_height,
+            'total_volume': pallet.total_volume
         })
     
     elif request.method == 'PUT':
@@ -480,12 +499,3 @@ def update_all_pallets_desi():
     
     db.session.commit()
     return jsonify({'message': 'Tüm paletlerin desi değerleri güncellendi'})
-
-@app.errorhandler(404)
-def not_found_error(error):
-    return render_template('404.html'), 404
-
-@app.errorhandler(500)
-def internal_error(error):
-    db.session.rollback()
-    return render_template('500.html'), 500
