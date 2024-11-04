@@ -163,4 +163,301 @@ def manage_company(company_id):
             db.session.rollback()
             return jsonify({'message': str(e)}), 400
 
-# [Rest of the code remains the same...]
+@app.route('/pallets')
+@login_required
+def pallets():
+    pallets = Pallet.query.join(Company).filter(Company.user_id == current_user.id).all()
+    companies = Company.query.filter_by(user_id=current_user.id).all()
+    return render_template('pallets.html', pallets=pallets, companies=companies)
+
+@app.route('/pallets/<int:pallet_id>')
+@login_required
+def pallet_details(pallet_id):
+    pallet = Pallet.query.join(Company).filter(
+        Company.user_id == current_user.id,
+        Pallet.id == pallet_id
+    ).first_or_404()
+    return render_template('pallet_details.html', pallet=pallet)
+
+@app.route('/api/pallets', methods=['POST'])
+@login_required
+def create_pallet():
+    try:
+        data = request.get_json()
+        
+        # Verify company ownership
+        company = Company.query.filter_by(id=data.get('company_id'), user_id=current_user.id).first()
+        if not company:
+            return jsonify({'message': 'Geçersiz firma'}), 404
+        
+        pallet = Pallet(
+            name=data['name'],
+            company_id=company.id,
+            price=data['price'],
+            board_thickness=data['board_thickness'],
+            upper_board_length=data['upper_board_length'],
+            upper_board_width=data['upper_board_width'],
+            upper_board_quantity=data['upper_board_quantity'],
+            lower_board_length=data['lower_board_length'],
+            lower_board_width=data['lower_board_width'],
+            lower_board_quantity=data['lower_board_quantity'],
+            closure_length=data['closure_length'],
+            closure_width=data['closure_width'],
+            closure_quantity=data['closure_quantity'],
+            block_length=data['block_length'],
+            block_width=data['block_width'],
+            block_height=data['block_height']
+        )
+        
+        # Calculate volumes
+        volumes = calculate_component_volumes(pallet)
+        pallet.upper_board_desi = volumes['upper_board_desi']
+        pallet.lower_board_desi = volumes['lower_board_desi']
+        pallet.closure_desi = volumes['closure_desi']
+        pallet.block_desi = volumes['block_desi']
+        pallet.total_volume = volumes['total_desi']
+        
+        db.session.add(pallet)
+        db.session.commit()
+        return jsonify({'message': 'Palet başarıyla eklendi', 'id': pallet.id}), 201
+    except KeyError as e:
+        return jsonify({'message': f'Eksik alan: {str(e)}'}), 400
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'message': str(e)}), 500
+
+@app.route('/api/pallets/<int:pallet_id>', methods=['GET', 'PUT', 'DELETE'])
+@login_required
+def manage_pallet(pallet_id):
+    try:
+        pallet = Pallet.query.join(Company).filter(
+            Pallet.id == pallet_id,
+            Company.user_id == current_user.id
+        ).first()
+        
+        if not pallet:
+            return jsonify({'message': 'Palet bulunamadı'}), 404
+
+        if request.method == 'GET':
+            return jsonify({
+                'id': pallet.id,
+                'name': pallet.name,
+                'company_id': pallet.company_id,
+                'price': pallet.price,
+                'board_thickness': pallet.board_thickness,
+                'upper_board_length': pallet.upper_board_length,
+                'upper_board_width': pallet.upper_board_width,
+                'upper_board_quantity': pallet.upper_board_quantity,
+                'lower_board_length': pallet.lower_board_length,
+                'lower_board_width': pallet.lower_board_width,
+                'lower_board_quantity': pallet.lower_board_quantity,
+                'closure_length': pallet.closure_length,
+                'closure_width': pallet.closure_width,
+                'closure_quantity': pallet.closure_quantity,
+                'block_length': pallet.block_length,
+                'block_width': pallet.block_width,
+                'block_height': pallet.block_height,
+            })
+        elif request.method == 'PUT':
+            data = request.get_json()
+            
+            # Verify company ownership
+            company = Company.query.filter_by(id=data.get('company_id'), user_id=current_user.id).first()
+            if not company:
+                return jsonify({'message': 'Geçersiz firma'}), 404
+            
+            # Update pallet fields
+            for key, value in data.items():
+                setattr(pallet, key, value)
+            
+            # Recalculate volumes
+            volumes = calculate_component_volumes(pallet)
+            pallet.upper_board_desi = volumes['upper_board_desi']
+            pallet.lower_board_desi = volumes['lower_board_desi']
+            pallet.closure_desi = volumes['closure_desi']
+            pallet.block_desi = volumes['block_desi']
+            pallet.total_volume = volumes['total_desi']
+            
+            db.session.commit()
+            return jsonify({'message': 'Palet güncellendi'})
+        else:  # DELETE
+            db.session.delete(pallet)
+            db.session.commit()
+            return jsonify({'message': 'Palet silindi'})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'message': str(e)}), 500
+
+@app.route('/export/pallets/csv')
+@login_required
+def export_pallets_csv():
+    # Get filter parameters
+    company_id = request.args.get('company_id', '')
+    min_price = request.args.get('min_price', type=float, default=0)
+    max_price = request.args.get('max_price', type=float)
+    search_term = request.args.get('search', '').lower()
+
+    # Build query with filters
+    query = Pallet.query.join(Company).filter(Company.user_id == current_user.id)
+    if company_id:
+        query = query.filter(Pallet.company_id == company_id)
+    if min_price is not None:
+        query = query.filter(Pallet.price >= min_price)
+    if max_price is not None:
+        query = query.filter(Pallet.price <= max_price)
+    if search_term:
+        query = query.filter(Pallet.name.ilike(f'%{search_term}%'))
+
+    pallets = query.all()
+
+    # Create CSV in memory
+    output = io.StringIO()
+    writer = csv.writer(output)
+    
+    # Write headers
+    writer.writerow([
+        'ID', 'İsim', 'Firma', 'Fiyat (TL)', 'Toplam Hacim (desi)',
+        'Tahta Kalınlığı', 
+        'Üst Tahta (UxGxA)', 'Alt Tahta (UxGxA)', 
+        'Kapatma (UxGxA)', 'Takoz (UxGxY)'
+    ])
+    
+    # Write data
+    for pallet in pallets:
+        writer.writerow([
+            pallet.id, pallet.name, pallet.company.name, 
+            f"{pallet.price:.2f}", f"{pallet.total_volume:.2f}",
+            pallet.board_thickness,
+            f"{pallet.upper_board_length}x{pallet.upper_board_width}x{pallet.upper_board_quantity}",
+            f"{pallet.lower_board_length}x{pallet.lower_board_width}x{pallet.lower_board_quantity}",
+            f"{pallet.closure_length}x{pallet.closure_width}x{pallet.closure_quantity}",
+            f"{pallet.block_length}x{pallet.block_width}x{pallet.block_height}"
+        ])
+    
+    # Prepare response
+    output.seek(0)
+    return send_file(
+        io.BytesIO(output.getvalue().encode('utf-8')),
+        mimetype='text/csv',
+        as_attachment=True,
+        download_name=f'paletler_{datetime.now().strftime("%Y%m%d_%H%M%S")}.csv'
+    )
+
+@app.route('/export/pallets/pdf')
+@login_required
+def export_pallets_pdf():
+    # Get filter parameters
+    company_id = request.args.get('company_id', '')
+    min_price = request.args.get('min_price', type=float, default=0)
+    max_price = request.args.get('max_price', type=float)
+    search_term = request.args.get('search', '').lower()
+
+    # Build query with filters
+    query = Pallet.query.join(Company).filter(Company.user_id == current_user.id)
+    if company_id:
+        query = query.filter(Pallet.company_id == company_id)
+    if min_price is not None:
+        query = query.filter(Pallet.price >= min_price)
+    if max_price is not None:
+        query = query.filter(Pallet.price <= max_price)
+    if search_term:
+        query = query.filter(Pallet.name.ilike(f'%{search_term}%'))
+
+    pallets = query.all()
+
+    # Create PDF in memory
+    buffer = io.BytesIO()
+    
+    # Get company name if single company selected
+    company_name = None
+    if company_id:
+        company = Company.query.get(company_id)
+        if company:
+            company_name = company.name
+
+    # Create PDF document
+    doc = SimpleDocTemplate(
+        buffer,
+        pagesize=landscape(A4),
+        rightMargin=1*cm,
+        leftMargin=1*cm,
+        topMargin=1*cm,
+        bottomMargin=1*cm
+    )
+
+    # Create elements list
+    elements = []
+
+    # Add title
+    title_style = ParagraphStyle(
+        'CustomTitle',
+        parent=getSampleStyleSheet()['Title'],
+        fontName='DejaVuSans-Bold',
+        fontSize=16,
+        spaceAfter=30,
+        alignment=1  # Center alignment
+    )
+    
+    # Set title based on filter
+    title = f"{company_name} Palet Ölçüleri" if company_name else "Palet Ölçüleri"
+    elements.append(Paragraph(title, title_style))
+
+    # Define data for table
+    data = [
+        ['ID', 'İsim', 'Firma', 'Fiyat (TL)', 'Toplam Hacim (desi)', 'Ölçüler']
+    ]
+
+    # Add pallet data
+    for pallet in pallets:
+        measurements = (
+            f"Üst Tahta: {pallet.upper_board_length}x{pallet.upper_board_width} cm ({pallet.upper_board_quantity} adet)\n"
+            f"Alt Tahta: {pallet.lower_board_length}x{pallet.lower_board_width} cm ({pallet.lower_board_quantity} adet)\n"
+            f"Kapatma: {pallet.closure_length}x{pallet.closure_width} cm ({pallet.closure_quantity} adet)\n"
+            f"Takoz: {pallet.block_length}x{pallet.block_width}x{pallet.block_height} cm"
+        )
+
+        data.append([
+            str(pallet.id),
+            pallet.name,
+            pallet.company.name,
+            f"{pallet.price:.2f}",
+            f"{pallet.total_volume:.2f}",
+            measurements
+        ])
+
+    # Create table
+    col_widths = [1*cm, 3*cm, 3*cm, 2*cm, 2*cm, 15*cm]
+    table = Table(data, colWidths=col_widths)
+    table.setStyle(TableStyle([
+        ('FONTNAME', (0, 0), (-1, 0), 'DejaVuSans-Bold'),
+        ('FONTNAME', (0, 1), (-1, -1), 'DejaVuSans'),
+        ('FONTSIZE', (0, 0), (-1, -1), 8),
+        ('GRID', (0, 0), (-1, -1), 1, colors.grey),
+        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('ALIGN', (-1, 1), (-1, -1), 'LEFT'),  # Left align the measurements column
+        ('LEFTPADDING', (-1, 1), (-1, -1), 5),
+    ]))
+
+    elements.append(table)
+
+    # Build PDF
+    doc.build(elements)
+    buffer.seek(0)
+    
+    return send_file(
+        buffer,
+        mimetype='application/pdf',
+        as_attachment=True,
+        download_name=f'paletler_{datetime.now().strftime("%Y%m%d_%H%M%S")}.pdf'
+    )
+
+@app.errorhandler(404)
+def page_not_found(e):
+    return render_template('404.html'), 404
+
+@app.errorhandler(500)
+def internal_server_error(e):
+    return render_template('500.html'), 500
