@@ -7,3 +7,17 @@ instance/
 .coverage
 *.log
 .DS_Store
+.idea/
+*.swp
+*.swo
+.vscode/
+node_modules/
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.replit
+replit.nix
+.upm/
+poetry.lock
+.config/
