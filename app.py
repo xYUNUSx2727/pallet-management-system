@@ -1,5 +1,5 @@
 import os
-from flask import Flask
+from flask import Flask, render_template
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import DeclarativeBase
 from flask_login import LoginManager
@@ -29,6 +29,20 @@ login_manager.login_message_category = 'warning'
 def load_user(user_id):
     from models import User
     return User.query.get(int(user_id))
+
+# Error handlers
+@app.errorhandler(403)
+def forbidden_error(error):
+    return render_template('403.html'), 403
+
+@app.errorhandler(404)
+def not_found_error(error):
+    return render_template('404.html'), 404
+
+@app.errorhandler(500)
+def internal_error(error):
+    db.session.rollback()
+    return render_template('500.html'), 500
 
 # Ensure clean shutdown
 @app.teardown_appcontext
