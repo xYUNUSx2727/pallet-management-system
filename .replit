@@ -27,6 +27,10 @@ args = "seed"
 task = "workflow.run"
 args = "Flask Server"
 
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "download_images"
+
 [[workflows.workflow]]
 name = "database"
 author = "agent"
@@ -84,6 +88,20 @@ task = "packager.installForAll"
 task = "shell.exec"
 args = "python main.py"
 waitForPort = 5000
+
+[[workflows.workflow]]
+name = "download_images"
+author = "agent"
+
+[workflows.workflow.metadata]
+agentRequireRestartOnSave = false
+
+[[workflows.workflow.tasks]]
+task = "packager.installForAll"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "python download_images.py"
 
 [deployment]
 run = ["sh", "-c", "pg_ctl start"]

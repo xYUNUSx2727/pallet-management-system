@@ -6,21 +6,21 @@
         <div class="col-md-10 text-center">
             <h2 class="mb-5">Hoş Geldiniz</h2>
             <div class="d-flex justify-content-around flex-wrap gap-4">
-                <a href="{{ url_for('companies') }}" class="btn btn-primary dashboard-btn" style="min-width: 300px; min-height: 200px; display: flex; align-items: center; justify-content: center; background-image: url('https://images.unsplash.com/photo-1635513439661-7464ff1a6b12'); background-size: cover; background-position: center; position: relative;">
+                <a href="{{ url_for('companies') }}" class="btn btn-primary dashboard-btn" style="min-width: 300px; min-height: 200px; display: flex; align-items: center; justify-content: center; background-image: url('{{ url_for('static', filename='images/pallet.jpg') }}'); background-size: cover; background-position: center; position: relative;">
                     <div style="position: relative; z-index: 2; text-shadow: 2px 2px 4px rgba(0,0,0,0.8);">
                         <i class="fas fa-box-open mb-2" style="font-size: 3rem;"></i>
                         <div style="font-size: 1.5rem;">Palet Sistemi</div>
                     </div>
                     <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6);"></div>
                 </a>
-                <a href="#" class="btn btn-primary dashboard-btn" style="min-width: 300px; min-height: 200px; display: flex; align-items: center; justify-content: center; background-image: url('https://images.unsplash.com/photo-1521737711867-e3b97375f902'); background-size: cover; background-position: center; position: relative;">
+                <a href="#" class="btn btn-primary dashboard-btn" style="min-width: 300px; min-height: 200px; display: flex; align-items: center; justify-content: center; background-image: url('{{ url_for('static', filename='images/staff.jpg') }}'); background-size: cover; background-position: center; position: relative;">
                     <div style="position: relative; z-index: 2; text-shadow: 2px 2px 4px rgba(0,0,0,0.8);">
                         <i class="fas fa-users mb-2" style="font-size: 3rem;"></i>
                         <div style="font-size: 1.5rem;">Personel Takip</div>
                     </div>
                     <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6);"></div>
                 </a>
-                <a href="#" class="btn btn-primary dashboard-btn" style="min-width: 300px; min-height: 200px; display: flex; align-items: center; justify-content: center; background-image: url('https://images.unsplash.com/photo-1554224155-8d04cb21cd6c'); background-size: cover; background-position: center; position: relative;">
+                <a href="#" class="btn btn-primary dashboard-btn" style="min-width: 300px; min-height: 200px; display: flex; align-items: center; justify-content: center; background-image: url('{{ url_for('static', filename='images/accounting.jpg') }}'); background-size: cover; background-position: center; position: relative;">
                     <div style="position: relative; z-index: 2; text-shadow: 2px 2px 4px rgba(0,0,0,0.8);">
                         <i class="fas fa-calculator mb-2" style="font-size: 3rem;"></i>
                         <div style="font-size: 1.5rem;">Ön Muhasebe</div>
