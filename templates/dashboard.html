@@ -2,14 +2,46 @@
 
 {% block content %}
 <div class="container">
-    <div class="row justify-content-center align-items-center" style="min-height: 80vh;">
+    <div class="row justify-content-center">
         <div class="col-md-8 text-center">
-            <div class="d-flex justify-content-around">
-                <a href="{{ url_for('companies') }}" class="btn btn-primary" style="width: 25%; height: 10vh; display: flex; align-items: center; justify-content: center;">Panel Sistemi</a>
-                <a href="#" class="btn btn-primary" style="width: 25%; height: 10vh; display: flex; align-items: center; justify-content: center;">Personel Takip</a>
-                <a href="#" class="btn btn-primary" style="width: 25%; height: 10vh; display: flex; align-items: center; justify-content: center;">Ön Muhasebe</a>
+            <h2 class="mb-4">Hoş Geldiniz</h2>
+            <div class="d-flex justify-content-around flex-wrap gap-3">
+                <a href="{{ url_for('companies') }}" class="btn btn-primary dashboard-btn" style="min-width: 200px; min-height: 100px; display: flex; align-items: center; justify-content: center; background-image: url('https://images.unsplash.com/photo-1635513439661-7464ff1a6b12'); background-size: cover; background-position: center; position: relative;">
+                    <div style="position: relative; z-index: 2; text-shadow: 2px 2px 4px rgba(0,0,0,0.8);">
+                        <i class="fas fa-box-open mb-2" style="font-size: 2rem;"></i>
+                        <div>Palet Sistemi</div>
+                    </div>
+                    <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5);"></div>
+                </a>
+                <a href="#" class="btn btn-primary dashboard-btn" style="min-width: 200px; min-height: 100px; display: flex; align-items: center; justify-content: center; background-image: url('https://images.unsplash.com/photo-1521737711867-e3b97375f902'); background-size: cover; background-position: center; position: relative;">
+                    <div style="position: relative; z-index: 2; text-shadow: 2px 2px 4px rgba(0,0,0,0.8);">
+                        <i class="fas fa-users mb-2" style="font-size: 2rem;"></i>
+                        <div>Personel Takip</div>
+                    </div>
+                    <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5);"></div>
+                </a>
+                <a href="#" class="btn btn-primary dashboard-btn" style="min-width: 200px; min-height: 100px; display: flex; align-items: center; justify-content: center; background-image: url('https://images.unsplash.com/photo-1554224155-8d04cb21cd6c'); background-size: cover; background-position: center; position: relative;">
+                    <div style="position: relative; z-index: 2; text-shadow: 2px 2px 4px rgba(0,0,0,0.8);">
+                        <i class="fas fa-calculator mb-2" style="font-size: 2rem;"></i>
+                        <div>Ön Muhasebe</div>
+                    </div>
+                    <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5);"></div>
+                </a>
             </div>
         </div>
     </div>
 </div>
+
+<style>
+.dashboard-btn {
+    transition: transform 0.3s ease;
+    overflow: hidden;
+}
+.dashboard-btn:hover {
+    transform: scale(1.05);
+}
+.dashboard-btn > div {
+    color: white;
+}
+</style>
 {% endblock %}
