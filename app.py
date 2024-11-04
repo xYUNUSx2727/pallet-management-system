@@ -3,6 +3,7 @@ from flask import Flask, render_template
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import DeclarativeBase
 from flask_login import LoginManager
+import urllib.parse
 
 class Base(DeclarativeBase):
     pass
@@ -12,11 +13,22 @@ login_manager = LoginManager()
 
 app = Flask(__name__)
 
-app.secret_key = os.environ.get("FLASK_SECRET_KEY") or "pallet-management-secret"
-app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL")
+# Parse DATABASE_URL and properly encode password
+db_url = os.environ.get("DATABASE_URL")
+if db_url:
+    parsed = urllib.parse.urlparse(db_url)
+    if parsed.password:
+        encoded_password = urllib.parse.quote(parsed.password)
+        db_url = db_url.replace(parsed.password, encoded_password)
+
+app.secret_key = os.environ.get("FLASK_SECRET_KEY") or os.urandom(24)
+app.config["SQLALCHEMY_DATABASE_URI"] = db_url
 app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
-    "pool_recycle": 300,
     "pool_pre_ping": True,
+    "pool_recycle": 300,
+    "pool_timeout": 900,
+    "pool_size": 10,
+    "max_overflow": 5,
 }
 
 db.init_app(app)
@@ -44,17 +56,21 @@ def internal_error(error):
     db.session.rollback()
     return render_template('500.html'), 500
 
-# Ensure clean shutdown
+# Clean shutdown
 @app.teardown_appcontext
 def shutdown_session(exception=None):
     db.session.remove()
 
+# Initialize database and import routes
 with app.app_context():
     import models
     db.create_all()
     
-    # Import seed data after tables are created
-    from seed_data import seed_data
-    seed_data()
+    # Import routes after db initialization
+    from routes import *
 
-from routes import *
+    # Only seed data if tables are empty
+    from models import User
+    if not User.query.first():
+        from seed_data import seed_data
+        seed_data()
