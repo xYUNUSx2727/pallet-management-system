@@ -18,7 +18,7 @@ def download_image(url, filename):
 
 # Download required images
 images = {
-    'pallet.jpg': 'https://images.unsplash.com/photo-1635513439661-7464ff1a6b12',
+    'pallet.jpg': 'https://images.unsplash.com/photo-1598193957011-39b9f2916992',
     'staff.jpg': 'https://images.unsplash.com/photo-1521737711867-e3b97375f902',
     'accounting.jpg': 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c'
 }

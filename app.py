@@ -51,8 +51,6 @@ def shutdown_session(exception=None):
 
 with app.app_context():
     import models
-    # Drop and recreate all tables
-    db.drop_all()
     db.create_all()
     
     # Import seed data after tables are created

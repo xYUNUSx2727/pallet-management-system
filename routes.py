@@ -22,10 +22,40 @@ pdfmetrics.registerFont(TTFont('DejaVuSans-Bold', '/usr/share/fonts/truetype/dej
 def admin_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        if not current_user.is_authenticated or not current_user.is_admin:
-            abort(403)
+        if not current_user.is_authenticated:
+            flash('Bu sayfaya erişmek için giriş yapmalısınız.', 'warning')
+            return redirect(url_for('login', next=request.url))
+        if not current_user.is_admin:
+            flash('Bu sayfaya erişim yetkiniz bulunmamaktadır.', 'danger')
+            return abort(403)
         return f(*args, **kwargs)
     return decorated_function
+
+def owner_required(model):
+    def decorator(f):
+        @wraps(f)
+        def decorated_function(*args, **kwargs):
+            if not current_user.is_authenticated:
+                flash('Bu işlem için giriş yapmalısınız.', 'warning')
+                return jsonify({'message': 'Unauthorized'}), 401
+            
+            item_id = kwargs.get('company_id') or kwargs.get('pallet_id')
+            if not item_id:
+                return jsonify({'message': 'Invalid request'}), 400
+                
+            item = model.query.get(item_id)
+            if not item:
+                return jsonify({'message': 'Not found'}), 404
+                
+            if model == Company and item.user_id != current_user.id:
+                return jsonify({'message': 'Unauthorized'}), 403
+                
+            if model == Pallet and item.company.user_id != current_user.id:
+                return jsonify({'message': 'Unauthorized'}), 403
+                
+            return f(*args, **kwargs)
+        return decorated_function
+    return decorator
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -42,7 +72,7 @@ def login():
             login_user(user, remember=remember)
             flash('Başarıyla giriş yaptınız!', 'success')
             next_page = request.args.get('next')
-            return redirect(next_page if next_page else url_for('dashboard'))
+            return redirect(next_page if next_page and next_page.startswith('/') else url_for('dashboard'))
         else:
             flash('Geçersiz kullanıcı adı veya şifre', 'danger')
     
@@ -133,6 +163,7 @@ def create_company():
 
 @app.route('/api/companies/<int:company_id>', methods=['PUT', 'DELETE', 'GET'])
 @login_required
+@owner_required(Company)
 def manage_company(company_id):
     company = Company.query.filter_by(id=company_id, user_id=current_user.id).first()
     if not company:
@@ -172,6 +203,7 @@ def pallets():
 
 @app.route('/pallets/<int:pallet_id>')
 @login_required
+@owner_required(Pallet)
 def pallet_details(pallet_id):
     pallet = Pallet.query.join(Company).filter(
         Company.user_id == current_user.id,
@@ -228,6 +260,7 @@ def create_pallet():
 
 @app.route('/api/pallets/<int:pallet_id>', methods=['GET', 'PUT', 'DELETE'])
 @login_required
+@owner_required(Pallet)
 def manage_pallet(pallet_id):
     try:
         pallet = Pallet.query.join(Company).filter(
@@ -434,30 +467,25 @@ def export_pallets_pdf():
         ('FONTSIZE', (0, 0), (-1, -1), 8),
         ('GRID', (0, 0), (-1, -1), 1, colors.grey),
         ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
-        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
         ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-        ('ALIGN', (-1, 1), (-1, -1), 'LEFT'),  # Left align the measurements column
-        ('LEFTPADDING', (-1, 1), (-1, -1), 5),
+        ('FONTNAME', (0, 0), (-1, 0), 'DejaVuSans-Bold'),
+        ('PADDING', (0, 0), (-1, -1), 6),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.white),
+        ('TEXTCOLOR', (0, 1), (-1, -1), colors.black),
+        ('ALIGN', (-1, 0), (-1, -1), 'LEFT'),  # Left align the measurements column
+        ('FONTSIZE', (-1, 1), (-1, -1), 6),  # Smaller font for measurements
     ]))
 
     elements.append(table)
-
-    # Build PDF
     doc.build(elements)
+
+    # Prepare response
     buffer.seek(0)
-    
     return send_file(
         buffer,
         mimetype='application/pdf',
         as_attachment=True,
         download_name=f'paletler_{datetime.now().strftime("%Y%m%d_%H%M%S")}.pdf'
     )
-
-@app.errorhandler(404)
-def page_not_found(e):
-    return render_template('404.html'), 404
-
-@app.errorhandler(500)
-def internal_server_error(e):
-    return render_template('500.html'), 500
