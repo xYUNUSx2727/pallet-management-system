@@ -27,13 +27,13 @@ def seed_data():
                     if not existing:
                         db.session.add(company)
                 except Exception as e:
-                    print(f'Error adding company {company.name}: {str(e)}')
+                    print(f'Firma eklenirken hata oluştu {company.name}: {str(e)}')
                     continue
             
             try:
                 db.session.commit()
             except Exception as e:
-                print(f'Error committing companies: {str(e)}')
+                print(f'Firmalar kaydedilirken hata oluştu: {str(e)}')
                 db.session.rollback()
                 return
 
@@ -89,18 +89,18 @@ def seed_data():
                     pallet.total_volume = volumes['total_desi']
                     db.session.add(pallet)
                 except Exception as e:
-                    print(f'Error adding pallet {pallet_data["name"]}: {str(e)}')
+                    print(f'Palet eklenirken hata oluştu {pallet_data["name"]}: {str(e)}')
                     continue
 
             try:
                 db.session.commit()
-                print('Seeding completed successfully')
+                print('Örnek veriler başarıyla yüklendi')
             except Exception as e:
-                print(f'Error committing pallets: {str(e)}')
+                print(f'Paletler kaydedilirken hata oluştu: {str(e)}')
                 db.session.rollback()
 
     except Exception as e:
-        print(f'Error during seeding: {str(e)}')
+        print(f'Veri yükleme sırasında hata oluştu: {str(e)}')
         if 'db' in locals() and hasattr(db, 'session'):
             db.session.rollback()
 

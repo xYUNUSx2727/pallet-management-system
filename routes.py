@@ -37,21 +37,21 @@ def owner_required(model):
         def decorated_function(*args, **kwargs):
             if not current_user.is_authenticated:
                 flash('Bu işlem için giriş yapmalısınız.', 'warning')
-                return jsonify({'message': 'Unauthorized'}), 401
+                return jsonify({'message': 'Yetkisiz erişim'}), 401
             
             item_id = kwargs.get('company_id') or kwargs.get('pallet_id')
             if not item_id:
-                return jsonify({'message': 'Invalid request'}), 400
+                return jsonify({'message': 'Geçersiz istek'}), 400
                 
             item = model.query.get(item_id)
             if not item:
-                return jsonify({'message': 'Not found'}), 404
+                return jsonify({'message': 'Kayıt bulunamadı'}), 404
                 
             if model == Company and item.user_id != current_user.id:
-                return jsonify({'message': 'Unauthorized'}), 403
+                return jsonify({'message': 'Yetkisiz erişim'}), 403
                 
             if model == Pallet and item.company.user_id != current_user.id:
-                return jsonify({'message': 'Unauthorized'}), 403
+                return jsonify({'message': 'Yetkisiz erişim'}), 403
                 
             return f(*args, **kwargs)
         return decorated_function
@@ -312,11 +312,11 @@ def manage_pallet(pallet_id):
             pallet.total_volume = volumes['total_desi']
             
             db.session.commit()
-            return jsonify({'message': 'Palet güncellendi'})
+            return jsonify({'message': 'Palet başarıyla güncellendi'})
         else:  # DELETE
             db.session.delete(pallet)
             db.session.commit()
-            return jsonify({'message': 'Palet silindi'})
+            return jsonify({'message': 'Palet başarıyla silindi'})
     except Exception as e:
         db.session.rollback()
         return jsonify({'message': str(e)}), 500
@@ -352,7 +352,7 @@ def export_pallets_csv():
         'ID', 'İsim', 'Firma', 'Fiyat (TL)', 'Toplam Hacim (desi)',
         'Tahta Kalınlığı', 
         'Üst Tahta (UxGxA)', 'Alt Tahta (UxGxA)', 
-        'Kapatma (UxGxA)', 'Takoz (UxGxY)'
+        'Kapama (UxGxA)', 'Takoz (UxGxY)'
     ])
     
     # Write data
@@ -430,26 +430,33 @@ def export_pallets_pdf():
         spaceAfter=30,
         alignment=1  # Center alignment
     )
-    
-    # Set title based on filter
-    title = f"{company_name} Palet Ölçüleri" if company_name else "Palet Ölçüleri"
-    elements.append(Paragraph(title, title_style))
 
-    # Define data for table
-    data = [
-        ['ID', 'İsim', 'Firma', 'Fiyat (TL)', 'Toplam Hacim (desi)', 'Ölçüler']
+    title_text = 'Palet Listesi'
+    if company_name:
+        title_text += f' - {company_name}'
+    if min_price or max_price:
+        price_range = []
+        if min_price:
+            price_range.append(f'{min_price:.2f} TL')
+        if max_price:
+            price_range.append(f'{max_price:.2f} TL')
+        title_text += f' (Fiyat Aralığı: {" - ".join(price_range)})'
+    
+    elements.append(Paragraph(title_text, title_style))
+
+    # Define table data
+    table_data = [
+        ['ID', 'İsim', 'Firma', 'Fiyat (TL)', 'Hacim (desi)', 'Ölçüler']
     ]
 
-    # Add pallet data
     for pallet in pallets:
-        measurements = (
-            f"Üst Tahta: {pallet.upper_board_length}x{pallet.upper_board_width} cm ({pallet.upper_board_quantity} adet)\n"
-            f"Alt Tahta: {pallet.lower_board_length}x{pallet.lower_board_width} cm ({pallet.lower_board_quantity} adet)\n"
-            f"Kapatma: {pallet.closure_length}x{pallet.closure_width} cm ({pallet.closure_quantity} adet)\n"
-            f"Takoz: {pallet.block_length}x{pallet.block_width}x{pallet.block_height} cm"
-        )
+        measurements = f"""Kalınlık: {pallet.board_thickness}
+        Üst Tahta: {pallet.upper_board_length}x{pallet.upper_board_width}x{pallet.upper_board_quantity}
+        Alt Tahta: {pallet.lower_board_length}x{pallet.lower_board_width}x{pallet.lower_board_quantity}
+        Kapama: {pallet.closure_length}x{pallet.closure_width}x{pallet.closure_quantity}
+        Takoz: {pallet.block_length}x{pallet.block_width}x{pallet.block_height}"""
 
-        data.append([
+        table_data.append([
             str(pallet.id),
             pallet.name,
             pallet.company.name,
@@ -459,26 +466,23 @@ def export_pallets_pdf():
         ])
 
     # Create table
-    col_widths = [1*cm, 3*cm, 3*cm, 2*cm, 2*cm, 15*cm]
-    table = Table(data, colWidths=col_widths)
+    table = Table(table_data, repeatRows=1)
     table.setStyle(TableStyle([
-        ('FONTNAME', (0, 0), (-1, 0), 'DejaVuSans-Bold'),
-        ('FONTNAME', (0, 1), (-1, -1), 'DejaVuSans'),
-        ('FONTSIZE', (0, 0), (-1, -1), 8),
-        ('GRID', (0, 0), (-1, -1), 1, colors.grey),
-        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+        ('FONT', (0, 0), (-1, -1), 'DejaVuSans'),
+        ('FONT', (0, 0), (-1, 0), 'DejaVuSans-Bold'),
+        ('FONTSIZE', (0, 0), (-1, -1), 10),
         ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
         ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-        ('FONTNAME', (0, 0), (-1, 0), 'DejaVuSans-Bold'),
-        ('PADDING', (0, 0), (-1, -1), 6),
-        ('BACKGROUND', (0, 1), (-1, -1), colors.white),
-        ('TEXTCOLOR', (0, 1), (-1, -1), colors.black),
-        ('ALIGN', (-1, 0), (-1, -1), 'LEFT'),  # Left align the measurements column
-        ('FONTSIZE', (-1, 1), (-1, -1), 6),  # Smaller font for measurements
+        ('GRID', (0, 0), (-1, -1), 1, colors.black),
+        ('BOX', (0, 0), (-1, -1), 2, colors.black),
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#2a2e35')),
+        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.lightgrey])
     ]))
 
     elements.append(table)
+
+    # Build PDF
     doc.build(elements)
 
     # Prepare response

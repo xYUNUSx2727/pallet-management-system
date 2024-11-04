@@ -68,7 +68,7 @@ with app.app_context():
     
     # Import routes after db initialization
     from routes import *
-
+    
     # Only seed data if tables are empty
     from models import User
     if not User.query.first():

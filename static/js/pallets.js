@@ -77,7 +77,7 @@ function updateExportLinks() {
             csvLink.href = `${baseUrl}?${params.toString()}`;
         }
     } catch (error) {
-        console.error('Export link güncelleme hatası:', error);
+        console.error('Dışa aktarma bağlantıları güncellenirken hata:', error);
     }
 }
 
@@ -226,7 +226,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 for (const [key, value] of Object.entries(palletData)) {
                     if (key === 'name' || key === 'company_id') continue;
                     if (!value || value <= 0) {
-                        throw new Error(`${key.split('_').join(' ')} için geçerli bir değer giriniz`);
+                        const fieldName = key.split('_').map(word => 
+                            word === 'length' ? 'uzunluk' :
+                            word === 'width' ? 'genişlik' :
+                            word === 'height' ? 'yükseklik' :
+                            word === 'quantity' ? 'adet' :
+                            word === 'thickness' ? 'kalınlık' :
+                            word === 'price' ? 'fiyat' : word
+                        ).join(' ');
+                        throw new Error(`Lütfen ${fieldName} için geçerli bir değer giriniz`);
                     }
                 }
 

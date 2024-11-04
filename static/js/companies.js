@@ -63,7 +63,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
 
                 // Success message and reload
-                alert(data.message || 'İşlem başarılı');
+                alert(companyId ? 'Firma başarıyla güncellendi' : 'Firma başarıyla eklendi');
                 location.reload();
             } catch (error) {
                 alert('Hata: ' + (error.message || 'Bilinmeyen bir hata oluştu'));
