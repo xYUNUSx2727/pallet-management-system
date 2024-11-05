@@ -100,7 +100,7 @@ def not_found_error(error):
 
 @app.errorhandler(500)
 def internal_error(error):
-    logger.error(f"500 error: {str(e)}")
+    logger.error(f"500 error: {str(error)}")
     if hasattr(db, 'session'):
         db.session.rollback()
     return render_template('500.html'), 500

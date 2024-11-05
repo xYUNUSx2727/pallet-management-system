@@ -5,13 +5,12 @@ document.addEventListener('DOMContentLoaded', function() {
         filterCompany: document.getElementById('filterCompany'),
         minPrice: document.getElementById('minPrice'),
         maxPrice: document.getElementById('maxPrice'),
-        sortOrder: document.getElementById('sortOrder'),
-        noResults: document.getElementById('noResults')
+        sortOrder: document.getElementById('sortOrder')
     };
 
     // Add event listeners for filters
     Object.values(filterElements).forEach(element => {
-        if (element && element !== filterElements.noResults) {
+        if (element) {
             element.addEventListener('input', filterAndSortPallets);
         }
     });
@@ -116,8 +115,8 @@ function filterAndSortPallets() {
         item.style.display = isVisible ? '' : 'none';
     });
 
-    // Sort visible items
-    if (visibleCount > 0) {
+    // Sort visible items if needed
+    if (visibleCount > 0 && sortOrder) {
         const sortedItems = Array.from(items)
             .filter(item => item.style.display !== 'none')
             .sort((a, b) => {
@@ -249,7 +248,6 @@ async function handleSavePallet() {
             block_height: parseFloat(document.getElementById('blockHeight').value) || 0
         };
 
-        // Validate the data
         validatePalletData(palletData);
 
         const palletId = document.getElementById('palletId').value;
@@ -296,6 +294,5 @@ function populatePalletForm(pallet) {
     document.getElementById('blockWidth').value = pallet.block_width;
     document.getElementById('blockHeight').value = pallet.block_height;
     
-    // Calculate initial desi values
     calculateDesi();
 }

@@ -7,3 +7,4 @@ reportlab
 Werkzeug
 cryptography
 SQLAlchemy>=2.0.0
+pymysql
