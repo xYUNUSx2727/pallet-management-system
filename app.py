@@ -24,59 +24,59 @@ class Base(DeclarativeBase):
 db = SQLAlchemy(model_class=Base)
 login_manager = LoginManager()
 
-app = Flask(__name__)
-
-# Configure MySQL connection using environment variables
-try:
-    app.secret_key = os.environ.get("FLASK_SECRET_KEY") or os.urandom(24)
+def create_app():
+    app = Flask(__name__)
     
-    # Get database configuration from environment
-    DATABASE_URL = os.environ.get('DATABASE_URL')
-    
-    if not DATABASE_URL:
-        # Get MySQL connection parameters
-        db_params = {
-            'user': os.environ.get('PGUSER'),
-            'password': os.environ.get('PGPASSWORD'),
-            'host': os.environ.get('PGHOST'),
-            'port': os.environ.get('PGPORT'),
-            'database': os.environ.get('PGDATABASE')
-        }
+    try:
+        app.secret_key = os.environ.get("FLASK_SECRET_KEY") or os.urandom(24)
         
-        # Check for missing parameters
-        missing_params = [k for k, v in db_params.items() if not v]
-        if missing_params:
-            raise ValueError(f"Missing database parameters: {', '.join(missing_params)}")
+        # Get database configuration from environment
+        DATABASE_URL = os.environ.get('DATABASE_URL')
         
-        # Construct MySQL connection URL
-        DATABASE_URL = f"mysql+pymysql://{db_params['user']}:{db_params['password']}@{db_params['host']}:{db_params['port']}/{db_params['database']}"
-    
-    # Database configuration with MySQL-specific settings
-    app.config["SQLALCHEMY_DATABASE_URI"] = DATABASE_URL
-    app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
-        "pool_pre_ping": True,
-        "pool_recycle": 300,
-        "pool_timeout": 900,
-        "pool_size": 10,
-        "max_overflow": 5,
-        "connect_args": {
-            "init_command": "SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci"
+        if not DATABASE_URL:
+            # Get MySQL connection parameters
+            db_params = {
+                'user': os.environ.get('PGUSER'),
+                'password': os.environ.get('PGPASSWORD'),
+                'host': os.environ.get('PGHOST'),
+                'port': os.environ.get('PGPORT'),
+                'database': os.environ.get('PGDATABASE')
+            }
+            
+            # Check for missing parameters
+            missing_params = [k for k, v in db_params.items() if not v]
+            if missing_params:
+                raise ValueError(f"Missing database parameters: {', '.join(missing_params)}")
+            
+            # Construct MySQL connection URL
+            DATABASE_URL = f"mysql+pymysql://{db_params['user']}:{db_params['password']}@{db_params['host']}:{db_params['port']}/{db_params['database']}"
+        
+        # MySQL specific configuration
+        app.config["SQLALCHEMY_DATABASE_URI"] = DATABASE_URL
+        app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
+            "pool_pre_ping": True,
+            "pool_recycle": 300,
+            "pool_timeout": 900,
+            "pool_size": 10,
+            "max_overflow": 5
         }
-    }
-    app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+        app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
-    # Initialize extensions
-    db.init_app(app)
-    login_manager.init_app(app)
-    login_manager.login_view = 'login'
-    login_manager.login_message = 'Lütfen önce giriş yapın.'
-    login_manager.login_message_category = 'warning'
+        # Initialize extensions with app
+        db.init_app(app)
+        login_manager.init_app(app)
+        login_manager.login_view = 'login'
+        login_manager.login_message = 'Lütfen önce giriş yapın.'
+        login_manager.login_message_category = 'warning'
+        
+        logger.info("Database connection established successfully")
+        return app
+        
+    except Exception as e:
+        logger.error(f"Database connection error: {str(e)}")
+        raise
 
-    logger.info("Database connection established successfully")
-
-except Exception as e:
-    logger.error(f"Database connection error: {str(e)}")
-    raise
+app = create_app()
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -97,8 +97,10 @@ def not_found_error(error):
 @app.errorhandler(500)
 def internal_error(error):
     logger.error(f"500 error: {str(error)}")
-    if hasattr(db, 'session'):
+    try:
         db.session.rollback()
+    except:
+        pass
     return render_template('500.html'), 500
 
 # Clean shutdown
@@ -106,8 +108,10 @@ def internal_error(error):
 def shutdown_session(exception=None):
     if exception:
         logger.error(f"Error during session cleanup: {str(exception)}")
-    if hasattr(db, 'session'):
+    try:
         db.session.remove()
+    except:
+        pass
 
 # Initialize database and import routes
 with app.app_context():
