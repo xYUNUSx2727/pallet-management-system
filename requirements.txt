@@ -6,3 +6,4 @@ mysql-connector-python
 reportlab
 Werkzeug
 cryptography
+SQLAlchemy>=2.0.0

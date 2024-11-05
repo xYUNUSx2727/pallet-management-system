@@ -4,7 +4,6 @@ from flask import Flask, render_template
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import DeclarativeBase
 from flask_login import LoginManager
-import urllib.parse
 import pymysql
 import sys
 
@@ -34,24 +33,20 @@ try:
     app.secret_key = os.environ.get("FLASK_SECRET_KEY") or os.urandom(24)
     
     # Get database configuration from environment
-    db_params = {
-        'user': os.environ.get('PGUSER'),
-        'password': os.environ.get('PGPASSWORD'),
-        'host': os.environ.get('PGHOST'),
-        'port': os.environ.get('PGPORT'),
-        'database': os.environ.get('PGDATABASE')
-    }
-
-    # Check if we have all required parameters
-    missing_params = [k for k, v in db_params.items() if not v]
-    if missing_params:
-        raise ValueError(f"Missing database parameters: {', '.join(missing_params)}")
-
-    # URL encode the password to handle special characters
-    password = urllib.parse.quote_plus(db_params['password'])
+    DATABASE_URL = os.environ.get('DATABASE_URL')
     
-    # Construct MySQL URL
-    DATABASE_URL = f"mysql+pymysql://{db_params['user']}:{password}@{db_params['host']}:{db_params['port']}/{db_params['database']}"
+    if not DATABASE_URL:
+        # Construct MySQL URL from individual parameters
+        user = os.environ.get('PGUSER')
+        password = os.environ.get('PGPASSWORD')
+        host = os.environ.get('PGHOST')
+        port = os.environ.get('PGPORT')
+        database = os.environ.get('PGDATABASE')
+        
+        if not all([user, password, host, port, database]):
+            raise ValueError("Missing required database configuration parameters")
+            
+        DATABASE_URL = f"mysql+pymysql://{user}:{password}@{host}:{port}/{database}"
 
     app.config["SQLALCHEMY_DATABASE_URI"] = DATABASE_URL
     app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
