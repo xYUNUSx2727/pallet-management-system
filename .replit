@@ -31,6 +31,14 @@ args = "Flask Server"
 task = "workflow.run"
 args = "download_images"
 
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "git_init"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "git_push"
+
 [[workflows.workflow]]
 name = "database"
 author = "agent"
@@ -102,6 +110,34 @@ task = "packager.installForAll"
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "python download_images.py"
+
+[[workflows.workflow]]
+name = "git_init"
+author = "agent"
+
+[workflows.workflow.metadata]
+agentRequireRestartOnSave = false
+
+[[workflows.workflow.tasks]]
+task = "packager.installForAll"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "git add . && git commit -m 'Initial commit: Complete pallet management system implementation'"
+
+[[workflows.workflow]]
+name = "git_push"
+author = "agent"
+
+[workflows.workflow.metadata]
+agentRequireRestartOnSave = false
+
+[[workflows.workflow.tasks]]
+task = "packager.installForAll"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "python push_to_github.py"
 
 [deployment]
 run = ["sh", "-c", "pg_ctl start"]

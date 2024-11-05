@@ -4,6 +4,9 @@ from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import DeclarativeBase
 from flask_login import LoginManager
 import urllib.parse
+import pymysql
+
+pymysql.install_as_MySQLdb()
 
 class Base(DeclarativeBase):
     pass
@@ -13,16 +16,9 @@ login_manager = LoginManager()
 
 app = Flask(__name__)
 
-# Parse DATABASE_URL and properly encode password
-db_url = os.environ.get("DATABASE_URL")
-if db_url:
-    parsed = urllib.parse.urlparse(db_url)
-    if parsed.password:
-        encoded_password = urllib.parse.quote(parsed.password)
-        db_url = db_url.replace(parsed.password, encoded_password)
-
+# Configure MySQL connection
 app.secret_key = os.environ.get("FLASK_SECRET_KEY") or os.urandom(24)
-app.config["SQLALCHEMY_DATABASE_URI"] = db_url
+app.config["SQLALCHEMY_DATABASE_URI"] = 'mysql+pymysql://root:@localhost/palet_yonetim'
 app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
     "pool_pre_ping": True,
     "pool_recycle": 300,
@@ -64,7 +60,8 @@ def shutdown_session(exception=None):
 # Initialize database and import routes
 with app.app_context():
     import models
-    db.create_all()
+    db.drop_all()  # Drop existing tables
+    db.create_all()  # Create new tables
     
     # Import routes after db initialization
     from routes import *
