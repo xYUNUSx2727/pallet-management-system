@@ -23,6 +23,7 @@ pymysql.install_as_MySQLdb()
 class Base(DeclarativeBase):
     pass
 
+# Initialize extensions
 db = SQLAlchemy(model_class=Base)
 login_manager = LoginManager()
 
@@ -37,16 +38,25 @@ try:
     
     if not DATABASE_URL:
         # Construct MySQL URL from individual parameters
-        user = os.environ.get('PGUSER')
-        password = os.environ.get('PGPASSWORD')
-        host = os.environ.get('PGHOST')
-        port = os.environ.get('PGPORT')
-        database = os.environ.get('PGDATABASE')
+        db_params = {
+            'user': os.environ.get('PGUSER'),
+            'password': os.environ.get('PGPASSWORD'),
+            'host': os.environ.get('PGHOST'),
+            'port': os.environ.get('PGPORT'),
+            'database': os.environ.get('PGDATABASE')
+        }
         
-        if not all([user, password, host, port, database]):
-            raise ValueError("Missing required database configuration parameters")
-            
-        DATABASE_URL = f"mysql+pymysql://{user}:{password}@{host}:{port}/{database}"
+        # Check for missing parameters
+        missing_params = [k for k, v in db_params.items() if not v]
+        if missing_params:
+            raise ValueError(f"Missing database parameters: {', '.join(missing_params)}")
+        
+        # Construct MySQL URL with proper encoding
+        DATABASE_URL = (
+            f"mysql+pymysql://{db_params['user']}:{db_params['password']}@"
+            f"{db_params['host']}:{db_params['port']}/{db_params['database']}"
+            "?charset=utf8mb4"
+        )
 
     app.config["SQLALCHEMY_DATABASE_URI"] = DATABASE_URL
     app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
@@ -55,7 +65,11 @@ try:
         "pool_timeout": 900,
         "pool_size": 10,
         "max_overflow": 5,
+        "connect_args": {
+            "charset": "utf8mb4"
+        }
     }
+    app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
     # Initialize extensions
     db.init_app(app)
@@ -89,7 +103,7 @@ def not_found_error(error):
 @app.errorhandler(500)
 def internal_error(error):
     logger.error(f"500 error: {str(error)}")
-    if 'db' in globals():
+    if hasattr(db, 'session'):
         db.session.rollback()
     return render_template('500.html'), 500
 
@@ -98,7 +112,7 @@ def internal_error(error):
 def shutdown_session(exception=None):
     if exception:
         logger.error(f"Error during session cleanup: {str(exception)}")
-    if 'db' in globals():
+    if hasattr(db, 'session'):
         db.session.remove()
 
 # Initialize database and import routes
