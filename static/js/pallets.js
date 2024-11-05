@@ -79,13 +79,12 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
-// Filter and sort pallets
 function filterAndSortPallets() {
-    const searchTerm = document.getElementById('searchName').value.toLowerCase();
-    const companyId = document.getElementById('filterCompany').value;
-    const minPrice = parseFloat(document.getElementById('minPrice').value) || 0;
-    const maxPrice = parseFloat(document.getElementById('maxPrice').value) || Infinity;
-    const sortOrder = document.getElementById('sortOrder').value;
+    const searchTerm = document.getElementById('searchName')?.value.toLowerCase() || '';
+    const companyId = document.getElementById('filterCompany')?.value || '';
+    const minPrice = parseFloat(document.getElementById('minPrice')?.value) || 0;
+    const maxPrice = parseFloat(document.getElementById('maxPrice')?.value) || Infinity;
+    const sortOrder = document.getElementById('sortOrder')?.value;
 
     const palletsList = document.getElementById('palletsList');
     const palletsAccordion = document.getElementById('palletsAccordion');
@@ -115,7 +114,6 @@ function filterAndSortPallets() {
         item.style.display = isVisible ? '' : 'none';
     });
 
-    // Sort visible items if needed
     if (visibleCount > 0 && sortOrder) {
         const sortedItems = Array.from(items)
             .filter(item => item.style.display !== 'none')
@@ -126,7 +124,9 @@ function filterAndSortPallets() {
             });
 
         const container = palletsList || palletsAccordion;
-        sortedItems.forEach(item => container.appendChild(item));
+        if (container) {
+            sortedItems.forEach(item => container.appendChild(item));
+        }
     }
 
     if (noResults) {
@@ -147,7 +147,6 @@ function getSortValue(item, sortOrder) {
     return 0;
 }
 
-// Calculate desi values in real-time
 function calculateDesi() {
     try {
         const getValue = (id) => parseFloat(document.getElementById(id)?.value) || 0;
@@ -179,17 +178,25 @@ function calculateDesi() {
         const blockDesi = (blockLength * blockWidth * blockHeight * 9) / 1000;
         
         // Update display values
-        document.getElementById('upperBoardDesi').textContent = upperDesi.toFixed(2);
-        document.getElementById('lowerBoardDesi').textContent = lowerDesi.toFixed(2);
-        document.getElementById('closureDesi').textContent = closureDesi.toFixed(2);
-        document.getElementById('blockDesi').textContent = blockDesi.toFixed(2);
-        document.getElementById('totalDesi').textContent = (upperDesi + lowerDesi + closureDesi + blockDesi).toFixed(2);
+        const elements = {
+            'upperBoardDesi': upperDesi,
+            'lowerBoardDesi': lowerDesi,
+            'closureDesi': closureDesi,
+            'blockDesi': blockDesi,
+            'totalDesi': upperDesi + lowerDesi + closureDesi + blockDesi
+        };
+
+        Object.entries(elements).forEach(([id, value]) => {
+            const element = document.getElementById(id);
+            if (element) {
+                element.textContent = value.toFixed(2);
+            }
+        });
     } catch (error) {
         console.error('Desi hesaplama hatası:', error);
     }
 }
 
-// Validate pallet data before submission
 function validatePalletData(data) {
     const requiredFields = {
         name: 'Palet adı',
@@ -221,7 +228,6 @@ function validatePalletData(data) {
     return true;
 }
 
-// Handle saving pallet data
 async function handleSavePallet() {
     try {
         const form = document.getElementById('palletForm');
@@ -274,7 +280,6 @@ async function handleSavePallet() {
     }
 }
 
-// Populate form with pallet data for editing
 function populatePalletForm(pallet) {
     document.getElementById('palletId').value = pallet.id;
     document.getElementById('palletName').value = pallet.name;
