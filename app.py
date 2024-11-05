@@ -18,6 +18,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+# Register MySQL driver
 pymysql.install_as_MySQLdb()
 
 class Base(DeclarativeBase):
@@ -31,29 +32,26 @@ app = Flask(__name__)
 # Configure MySQL connection using environment variables
 try:
     app.secret_key = os.environ.get("FLASK_SECRET_KEY") or os.urandom(24)
-    DATABASE_URL = os.environ.get('DATABASE_URL')
+    
+    # Get database configuration from environment
+    db_params = {
+        'user': os.environ.get('PGUSER'),
+        'password': os.environ.get('PGPASSWORD'),
+        'host': os.environ.get('PGHOST'),
+        'port': os.environ.get('PGPORT'),
+        'database': os.environ.get('PGDATABASE')
+    }
 
-    if not DATABASE_URL:
-        # Construct MySQL URL from individual parameters
-        db_params = {
-            'user': os.environ.get('PGUSER'),
-            'password': os.environ.get('PGPASSWORD'),
-            'host': os.environ.get('PGHOST'),
-            'port': os.environ.get('PGPORT'),
-            'database': os.environ.get('PGDATABASE')
-        }
-        
-        # Validate database parameters
-        missing_params = [k for k, v in db_params.items() if not v]
-        if missing_params:
-            raise ValueError(f"Missing database parameters: {', '.join(missing_params)}")
-        
-        DATABASE_URL = f"mysql+pymysql://{db_params['user']}:{db_params['password']}@{db_params['host']}:{db_params['port']}/{db_params['database']}"
+    # Check if we have all required parameters
+    missing_params = [k for k, v in db_params.items() if not v]
+    if missing_params:
+        raise ValueError(f"Missing database parameters: {', '.join(missing_params)}")
 
-    if DATABASE_URL.startswith('postgres://'):
-        # Convert PostgreSQL URL to MySQL URL
-        url = urllib.parse.urlparse(DATABASE_URL)
-        DATABASE_URL = f"mysql+pymysql://{url.username}:{url.password}@{url.hostname}:{url.port}/{url.path[1:]}"
+    # URL encode the password to handle special characters
+    password = urllib.parse.quote_plus(db_params['password'])
+    
+    # Construct MySQL URL
+    DATABASE_URL = f"mysql+pymysql://{db_params['user']}:{password}@{db_params['host']}:{db_params['port']}/{db_params['database']}"
 
     app.config["SQLALCHEMY_DATABASE_URI"] = DATABASE_URL
     app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
@@ -64,6 +62,7 @@ try:
         "max_overflow": 5,
     }
 
+    # Initialize extensions
     db.init_app(app)
     login_manager.init_app(app)
     login_manager.login_view = 'login'
@@ -95,7 +94,8 @@ def not_found_error(error):
 @app.errorhandler(500)
 def internal_error(error):
     logger.error(f"500 error: {str(error)}")
-    db.session.rollback()
+    if 'db' in globals():
+        db.session.rollback()
     return render_template('500.html'), 500
 
 # Clean shutdown
@@ -103,14 +103,14 @@ def internal_error(error):
 def shutdown_session(exception=None):
     if exception:
         logger.error(f"Error during session cleanup: {str(exception)}")
-    db.session.remove()
+    if 'db' in globals():
+        db.session.remove()
 
 # Initialize database and import routes
 with app.app_context():
     try:
         import models
-        db.drop_all()  # Drop existing tables
-        db.create_all()  # Create new tables
+        db.create_all()
         logger.info("Database tables created successfully")
         
         # Import routes after db initialization
