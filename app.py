@@ -51,7 +51,6 @@ try:
         if missing_params:
             raise ValueError(f"Missing database parameters: {', '.join(missing_params)}")
         
-        # Construct MySQL URL without charset in the URL
         DATABASE_URL = (
             f"mysql+pymysql://{db_params['user']}:{db_params['password']}@"
             f"{db_params['host']}:{db_params['port']}/{db_params['database']}"
@@ -66,8 +65,7 @@ try:
         "pool_size": 10,
         "max_overflow": 5,
         "connect_args": {
-            "charset": "utf8mb4",
-            "use_unicode": True
+            "charset": "utf8mb4"
         }
     }
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
