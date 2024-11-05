@@ -16,9 +16,16 @@ login_manager = LoginManager()
 
 app = Flask(__name__)
 
-# Configure MySQL connection
+# Configure MySQL connection using environment variables
 app.secret_key = os.environ.get("FLASK_SECRET_KEY") or os.urandom(24)
-app.config["SQLALCHEMY_DATABASE_URI"] = 'mysql+pymysql://root:@localhost/palet_yonetim'
+DATABASE_URL = os.environ.get('DATABASE_URL')
+
+if DATABASE_URL and DATABASE_URL.startswith('postgres://'):
+    # Convert PostgreSQL URL to MySQL URL
+    url = urllib.parse.urlparse(DATABASE_URL)
+    DATABASE_URL = f"mysql+pymysql://{url.username}:{url.password}@{url.hostname}:{url.port}/{url.path[1:]}"
+
+app.config["SQLALCHEMY_DATABASE_URI"] = DATABASE_URL or f"mysql+pymysql://{os.environ.get('PGUSER')}:{os.environ.get('PGPASSWORD')}@{os.environ.get('PGHOST')}:{os.environ.get('PGPORT')}/{os.environ.get('PGDATABASE')}"
 app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
     "pool_pre_ping": True,
     "pool_recycle": 300,
