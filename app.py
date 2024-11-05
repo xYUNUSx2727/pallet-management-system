@@ -17,9 +17,6 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Register MySQL driver
-pymysql.install_as_MySQLdb()
-
 class Base(DeclarativeBase):
     pass
 
@@ -51,13 +48,10 @@ try:
         if missing_params:
             raise ValueError(f"Missing database parameters: {', '.join(missing_params)}")
         
-        # Construct MySQL connection URL without charset in the URL
-        DATABASE_URL = (
-            f"mysql+pymysql://{db_params['user']}:{db_params['password']}@"
-            f"{db_params['host']}:{db_params['port']}/{db_params['database']}"
-        )
-
-    # MySQL specific configuration with proper charset handling
+        # Construct MySQL connection URL
+        DATABASE_URL = f"mysql+pymysql://{db_params['user']}:{db_params['password']}@{db_params['host']}:{db_params['port']}/{db_params['database']}"
+    
+    # Database configuration with MySQL-specific settings
     app.config["SQLALCHEMY_DATABASE_URI"] = DATABASE_URL
     app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
         "pool_pre_ping": True,
@@ -66,8 +60,7 @@ try:
         "pool_size": 10,
         "max_overflow": 5,
         "connect_args": {
-            "charset": "utf8mb4",
-            "ssl": {"rejectUnauthorized": False}
+            "init_command": "SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci"
         }
     }
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
