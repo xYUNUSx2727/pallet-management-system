@@ -2,6 +2,6 @@ Flask
 Flask-SQLAlchemy
 Flask-Login
 PyMySQL
+mysql-connector-python
 reportlab
 Werkzeug
-mysql-connector-python
