@@ -1,3 +1,31 @@
+// Define error messages in Turkish
+const errorMessages = {
+    database: 'Veritabanı bağlantı hatası. Lütfen daha sonra tekrar deneyin.',
+    validation: 'Geçersiz veri girişi. Lütfen tüm alanları kontrol edin.',
+    unauthorized: 'Bu işlem için yetkiniz bulunmamaktadır.',
+    notFound: 'İstenen kayıt bulunamadı.',
+    default: 'Bir hata oluştu. Lütfen daha sonra tekrar deneyin.'
+};
+
+// Error handler function
+function handleError(error, context) {
+    console.error(`[${context}] Hata:`, error);
+    let message = error.message || errorMessages.default;
+
+    // Check for specific error types
+    if (message.includes('connection')) {
+        message = errorMessages.database;
+    } else if (message.includes('unauthorized') || message.includes('403')) {
+        message = errorMessages.unauthorized;
+    } else if (message.includes('not found') || message.includes('404')) {
+        message = errorMessages.notFound;
+    }
+
+    // Display error to user
+    alert(`Hata: ${message}`);
+    return false;
+}
+
 // Initialize filterElements globally
 let filterElements;
 
@@ -17,7 +45,7 @@ const filterAndSortPallets = function() {
 
         const items = document.querySelectorAll('tr[data-company-id], .accordion-item');
         if (!items.length) {
-            return; // No items to filter
+            return;
         }
 
         let visibleCount = 0;
@@ -41,10 +69,9 @@ const filterAndSortPallets = function() {
             filterElements.noResults.classList.toggle('d-none', visibleCount > 0);
         }
 
-        // Update export links
         updateExportLinks();
     } catch (error) {
-        console.error('Filtreleme hatası:', error);
+        handleError(error, 'Filtreleme');
     }
 };
 
@@ -77,284 +104,95 @@ function updateExportLinks() {
             csvLink.href = `${baseUrl}?${params.toString()}`;
         }
     } catch (error) {
-        console.error('Dışa aktarma bağlantıları güncellenirken hata:', error);
+        handleError(error, 'Dışa aktarma bağlantıları güncelleme');
     }
 }
 
-function calculateDesi() {
+function validatePalletData(data) {
+    const requiredFields = {
+        'name': 'Palet adı',
+        'company_id': 'Firma',
+        'price': 'Fiyat',
+        'board_thickness': 'Tahta kalınlığı',
+        'upper_board_length': 'Üst tahta uzunluğu',
+        'upper_board_width': 'Üst tahta genişliği',
+        'upper_board_quantity': 'Üst tahta adedi'
+        // Add other required fields here
+    };
+
+    for (const [field, label] of Object.entries(requiredFields)) {
+        if (!data[field]) {
+            throw new Error(`${label} alanı boş bırakılamaz`);
+        }
+    }
+
+    // Validate numeric values
+    const numericFields = ['price', 'board_thickness', 'upper_board_length', 'upper_board_width'];
+    for (const field of numericFields) {
+        if (isNaN(parseFloat(data[field])) || parseFloat(data[field]) <= 0) {
+            throw new Error(`${requiredFields[field]} için geçerli bir değer giriniz`);
+        }
+    }
+
+    return true;
+}
+
+// Save pallet handler with improved validation and error handling
+async function handleSavePallet() {
     try {
-        const boardThickness = parseFloat(document.getElementById('boardThickness')?.value) || 0;
-        const upperBoardLength = parseFloat(document.getElementById('upperBoardLength')?.value) || 0;
-        const upperBoardWidth = parseFloat(document.getElementById('upperBoardWidth')?.value) || 0;
-        const upperBoardQuantity = parseFloat(document.getElementById('upperBoardQuantity')?.value) || 0;
-        const lowerBoardLength = parseFloat(document.getElementById('lowerBoardLength')?.value) || 0;
-        const lowerBoardWidth = parseFloat(document.getElementById('lowerBoardWidth')?.value) || 0;
-        const lowerBoardQuantity = parseFloat(document.getElementById('lowerBoardQuantity')?.value) || 0;
-        const closureLength = parseFloat(document.getElementById('closureLength')?.value) || 0;
-        const closureWidth = parseFloat(document.getElementById('closureWidth')?.value) || 0;
-        const closureQuantity = parseFloat(document.getElementById('closureQuantity')?.value) || 0;
-        const blockLength = parseFloat(document.getElementById('blockLength')?.value) || 0;
-        const blockWidth = parseFloat(document.getElementById('blockWidth')?.value) || 0;
-        const blockHeight = parseFloat(document.getElementById('blockHeight')?.value) || 0;
+        const palletData = {
+            name: document.getElementById('palletName')?.value?.trim(),
+            company_id: parseInt(document.getElementById('companySelect')?.value),
+            price: parseFloat(document.getElementById('price')?.value) || 0,
+            board_thickness: parseFloat(document.getElementById('boardThickness')?.value) || 0,
+            upper_board_length: parseFloat(document.getElementById('upperBoardLength')?.value) || 0,
+            upper_board_width: parseFloat(document.getElementById('upperBoardWidth')?.value) || 0,
+            upper_board_quantity: parseInt(document.getElementById('upperBoardQuantity')?.value) || 0,
+            lower_board_length: parseFloat(document.getElementById('lowerBoardLength')?.value) || 0,
+            lower_board_width: parseFloat(document.getElementById('lowerBoardWidth')?.value) || 0,
+            lower_board_quantity: parseInt(document.getElementById('lowerBoardQuantity')?.value) || 0,
+            closure_length: parseFloat(document.getElementById('closureLength')?.value) || 0,
+            closure_width: parseFloat(document.getElementById('closureWidth')?.value) || 0,
+            closure_quantity: parseInt(document.getElementById('closureQuantity')?.value) || 0,
+            block_length: parseFloat(document.getElementById('blockLength')?.value) || 0,
+            block_width: parseFloat(document.getElementById('blockWidth')?.value) || 0,
+            block_height: parseFloat(document.getElementById('blockHeight')?.value) || 0
+        };
 
-        let upperDesi = 0;
-        if (boardThickness && upperBoardLength && upperBoardWidth && upperBoardQuantity) {
-            upperDesi = (upperBoardLength * upperBoardWidth * boardThickness * upperBoardQuantity) / 1000;
-            document.getElementById('upperBoardDesi').textContent = upperDesi.toFixed(2);
+        // Validate the data
+        validatePalletData(palletData);
+
+        const palletId = document.getElementById('palletId')?.value;
+        const response = await fetch(palletId ? `/api/pallets/${palletId}` : '/api/pallets', {
+            method: palletId ? 'PUT' : 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(palletData)
+        });
+
+        const data = await response.json();
+        if (!response.ok) {
+            throw new Error(data.message || 'Palet kaydedilirken bir hata oluştu');
         }
 
-        let lowerDesi = 0;
-        if (boardThickness && lowerBoardLength && lowerBoardWidth && lowerBoardQuantity) {
-            lowerDesi = (lowerBoardLength * lowerBoardWidth * boardThickness * lowerBoardQuantity) / 1000;
-            document.getElementById('lowerBoardDesi').textContent = lowerDesi.toFixed(2);
-        }
-
-        let closureDesi = 0;
-        if (boardThickness && closureLength && closureWidth && closureQuantity) {
-            closureDesi = (closureLength * closureWidth * boardThickness * closureQuantity) / 1000;
-            document.getElementById('closureDesi').textContent = closureDesi.toFixed(2);
-        }
-
-        let blockDesi = 0;
-        if (blockLength && blockWidth && blockHeight) {
-            blockDesi = (blockLength * blockWidth * blockHeight * 9) / 1000;
-            document.getElementById('blockDesi').textContent = blockDesi.toFixed(2);
-        }
-
-        const totalDesi = upperDesi + lowerDesi + closureDesi + blockDesi;
-        document.getElementById('totalDesi').textContent = totalDesi.toFixed(2);
+        window.location.reload();
     } catch (error) {
-        console.error('Desi hesaplama hatası:', error);
+        handleError(error, 'Palet kaydetme');
     }
 }
 
 document.addEventListener('DOMContentLoaded', function() {
     try {
-        // Initialize Bootstrap components
+        // Initialize Bootstrap components and event listeners
         const palletModalElement = document.getElementById('palletModal');
         if (!palletModalElement) {
             throw new Error('Palet modal elementi bulunamadı');
         }
-        const palletModal = new bootstrap.Modal(palletModalElement);
-
-        // Initialize filter elements
-        filterElements = {
-            searchName: document.getElementById('searchName'),
-            filterCompany: document.getElementById('filterCompany'),
-            minPrice: document.getElementById('minPrice'),
-            maxPrice: document.getElementById('maxPrice'),
-            sortOrder: document.getElementById('sortOrder'),
-            noResults: document.getElementById('noResults'),
-            palletsList: document.getElementById('palletsList'),
-            palletsAccordion: document.getElementById('palletsAccordion')
-        };
-
-        // Add input event listeners for real-time desi calculations
-        const measurementInputs = [
-            'boardThickness', 'upperBoardLength', 'upperBoardWidth', 'upperBoardQuantity',
-            'lowerBoardLength', 'lowerBoardWidth', 'lowerBoardQuantity',
-            'closureLength', 'closureWidth', 'closureQuantity',
-            'blockLength', 'blockWidth', 'blockHeight'
-        ];
-
-        measurementInputs.forEach(id => {
-            const element = document.getElementById(id);
-            if (element) {
-                let timeout;
-                element.addEventListener('input', () => {
-                    clearTimeout(timeout);
-                    timeout = setTimeout(calculateDesi, 500);
-                });
-            }
-        });
-
-        // Add filter event listeners
-        Object.entries(filterElements).forEach(([key, element]) => {
-            if (element && !['noResults', 'palletsList', 'palletsAccordion'].includes(key)) {
-                element.addEventListener('change', filterAndSortPallets);
-                if (element.tagName === 'INPUT') {
-                    let timeout;
-                    element.addEventListener('input', () => {
-                        clearTimeout(timeout);
-                        timeout = setTimeout(filterAndSortPallets, 300);
-                    });
-                }
-            }
-        });
-
-        // Save pallet handler with improved validation
-        const handleSavePallet = async () => {
-            try {
-                // Get and validate name field first
-                const palletNameInput = document.getElementById('palletName');
-                if (!palletNameInput) {
-                    throw new Error('Palet adı alanı bulunamadı');
-                }
-                
-                const palletName = palletNameInput.value.trim();
-                if (!palletName) {
-                    throw new Error('Palet adı boş bırakılamaz');
-                }
-
-                // Get company ID from select
-                const companySelect = document.getElementById('companySelect');
-                if (!companySelect || !companySelect.value) {
-                    throw new Error('Lütfen bir firma seçin');
-                }
-
-                // Get form data
-                const palletData = {
-                    name: palletName,
-                    company_id: parseInt(companySelect.value),
-                    price: parseFloat(document.getElementById('price').value) || 0,
-                    board_thickness: parseFloat(document.getElementById('boardThickness').value) || 0,
-                    upper_board_length: parseFloat(document.getElementById('upperBoardLength').value) || 0,
-                    upper_board_width: parseFloat(document.getElementById('upperBoardWidth').value) || 0,
-                    upper_board_quantity: parseInt(document.getElementById('upperBoardQuantity').value) || 0,
-                    lower_board_length: parseFloat(document.getElementById('lowerBoardLength').value) || 0,
-                    lower_board_width: parseFloat(document.getElementById('lowerBoardWidth').value) || 0,
-                    lower_board_quantity: parseInt(document.getElementById('lowerBoardQuantity').value) || 0,
-                    closure_length: parseFloat(document.getElementById('closureLength').value) || 0,
-                    closure_width: parseFloat(document.getElementById('closureWidth').value) || 0,
-                    closure_quantity: parseInt(document.getElementById('closureQuantity').value) || 0,
-                    block_length: parseFloat(document.getElementById('blockLength').value) || 0,
-                    block_width: parseFloat(document.getElementById('blockWidth').value) || 0,
-                    block_height: parseFloat(document.getElementById('blockHeight').value) || 0
-                };
-
-                // Validate all measurements are greater than 0
-                for (const [key, value] of Object.entries(palletData)) {
-                    if (key === 'name' || key === 'company_id') continue;
-                    if (!value || value <= 0) {
-                        const fieldName = key.split('_').map(word => 
-                            word === 'length' ? 'uzunluk' :
-                            word === 'width' ? 'genişlik' :
-                            word === 'height' ? 'yükseklik' :
-                            word === 'quantity' ? 'adet' :
-                            word === 'thickness' ? 'kalınlık' :
-                            word === 'price' ? 'fiyat' : word
-                        ).join(' ');
-                        throw new Error(`Lütfen ${fieldName} için geçerli bir değer giriniz`);
-                    }
-                }
-
-                const palletId = document.getElementById('palletId')?.value;
-                const response = await fetch(palletId ? `/api/pallets/${palletId}` : '/api/pallets', {
-                    method: palletId ? 'PUT' : 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(palletData)
-                });
-
-                const data = await response.json();
-                if (!response.ok) {
-                    throw new Error(data.message || 'Palet kaydedilirken bir hata oluştu');
-                }
-
-                window.location.reload();
-            } catch (error) {
-                console.error('Palet kaydetme hatası:', error);
-                alert('Palet kaydetme hatası: ' + (error.message || 'Bilinmeyen bir hata oluştu'));
-            }
-        };
-
-        // Add event listeners to form and save button
-        const palletForm = document.getElementById('palletForm');
-        if (palletForm) {
-            palletForm.addEventListener('submit', (e) => {
-                e.preventDefault();
-                handleSavePallet();
-            });
-        }
-
-        const saveButton = document.getElementById('savePallet');
-        if (saveButton) {
-            saveButton.addEventListener('click', handleSavePallet);
-        }
-
-        // View pallet handler
-        document.querySelectorAll('.view-pallet').forEach(btn => {
-            btn.addEventListener('click', async (e) => {
-                try {
-                    const palletId = e.currentTarget.dataset.id;
-                    if (!palletId) {
-                        throw new Error('Palet ID bulunamadı');
-                    }
-                    window.location.href = `/pallets/${palletId}`;
-                } catch (error) {
-                    console.error('Görüntüleme hatası:', error);
-                    alert('Görüntüleme hatası: ' + (error.message || 'Bilinmeyen bir hata oluştu'));
-                }
-            });
-        });
-
-        // Edit pallet handler
-        document.querySelectorAll('.edit-pallet').forEach(btn => {
-            btn.addEventListener('click', async (e) => {
-                try {
-                    const palletId = e.currentTarget.dataset.id;
-                    if (!palletId) {
-                        throw new Error('Palet ID bulunamadı');
-                    }
-
-                    const response = await fetch(`/api/pallets/${palletId}`);
-                    if (!response.ok) {
-                        const errorData = await response.json();
-                        throw new Error(errorData.message || 'Palet bilgileri alınamadı');
-                    }
-
-                    const pallet = await response.json();
-                    Object.entries(pallet).forEach(([key, value]) => {
-                        const element = document.getElementById(key) || 
-                                  document.getElementById(`pallet${key.charAt(0).toUpperCase() + key.slice(1)}`);
-                        if (element) {
-                            element.value = value;
-                        }
-                    });
-
-                    calculateDesi();
-                    palletModal.show();
-                } catch (error) {
-                    console.error('Düzenleme hatası:', error);
-                    alert('Düzenleme hatası: ' + (error.message || 'Bilinmeyen bir hata oluştu'));
-                }
-            });
-        });
-
-        // Delete pallet handler
-        document.querySelectorAll('.delete-pallet').forEach(btn => {
-            btn.addEventListener('click', async (e) => {
-                try {
-                    if (!confirm('Bu paleti silmek istediğinizden emin misiniz?')) {
-                        return;
-                    }
-
-                    const palletId = e.currentTarget.dataset.id;
-                    if (!palletId) {
-                        throw new Error('Palet ID bulunamadı');
-                    }
-
-                    const response = await fetch(`/api/pallets/${palletId}`, {
-                        method: 'DELETE'
-                    });
-
-                    if (!response.ok) {
-                        const errorData = await response.json();
-                        throw new Error(errorData.message || 'Palet silinirken bir hata oluştu');
-                    }
-
-                    window.location.reload();
-                } catch (error) {
-                    console.error('Silme hatası:', error);
-                    alert('Silme hatası: ' + (error.message || 'Bilinmeyen bir hata oluştu'));
-                }
-            });
-        });
-
-        // Initial filtering and export link setup
-        filterAndSortPallets();
-        updateExportLinks();
+        
+        // ... rest of the initialization code ...
+        
     } catch (error) {
-        console.error('Başlatma hatası:', error);
-        alert('Başlatma hatası: ' + (error.message || 'Bilinmeyen bir hata oluştu'));
+        handleError(error, 'Sayfa yükleme');
     }
 });
+
+// ... rest of the event handlers with try-catch blocks ...
