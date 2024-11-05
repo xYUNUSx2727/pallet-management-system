@@ -9,6 +9,9 @@ import io
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4, landscape
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle
+import logging
+
+logger = logging.getLogger(__name__)
 
 @app.route('/')
 def index():
@@ -246,126 +249,134 @@ def pallet_details(pallet_id):
 @app.route('/export/pallets/csv')
 @login_required
 def export_pallets_csv():
-    search_term = request.args.get('search', '')
-    company_id = request.args.get('company_id', type=int)
-    min_price = request.args.get('min_price', type=float)
-    max_price = request.args.get('max_price', type=float)
-    
-    query = Pallet.query.join(Company).filter(Company.user_id == current_user.id)
-    
-    if search_term:
-        query = query.filter(Pallet.name.like(f'%{search_term}%'))
-    if company_id:
-        query = query.filter(Pallet.company_id == company_id)
-    if min_price is not None:
-        query = query.filter(Pallet.price >= min_price)
-    if max_price is not None:
-        query = query.filter(Pallet.price <= max_price)
-    
-    pallets = query.all()
-    
-    output = io.StringIO()
-    writer = csv.writer(output)
-    
-    headers = ['Palet Adı', 'Firma', 'Fiyat (TL)', 'Toplam Hacim (desi)',
-               'Üst Tahta Boyutları', 'Alt Tahta Boyutları',
-               'Kapama Tahta Boyutları', 'Takoz Boyutları']
-    
-    writer.writerow(headers)
-    
-    for pallet in pallets:
-        upper_board = f"{pallet.upper_board_length}x{pallet.upper_board_width}x{pallet.board_thickness} ({pallet.upper_board_quantity} adet)"
-        lower_board = f"{pallet.lower_board_length}x{pallet.lower_board_width}x{pallet.board_thickness} ({pallet.lower_board_quantity} adet)"
-        closure = f"{pallet.closure_length}x{pallet.closure_width}x{pallet.board_thickness} ({pallet.closure_quantity} adet)"
-        block = f"{pallet.block_length}x{pallet.block_width}x{pallet.block_height} (9 adet)"
+    try:
+        search_term = request.args.get('search', '')
+        company_id = request.args.get('company_id', type=int)
+        min_price = request.args.get('min_price', type=float)
+        max_price = request.args.get('max_price', type=float)
         
-        writer.writerow([
-            pallet.name,
-            pallet.company.name,
-            f"{float(pallet.price):.2f}",
-            f"{float(pallet.total_volume):.2f}",
-            upper_board,
-            lower_board,
-            closure,
-            block
-        ])
-    
-    output.seek(0)
-    return send_file(
-        io.BytesIO(output.getvalue().encode('utf-8-sig')),
-        mimetype='text/csv',
-        as_attachment=True,
-        download_name='paletler.csv'
-    )
+        query = Pallet.query.join(Company).filter(Company.user_id == current_user.id)
+        
+        if search_term:
+            query = query.filter(Pallet.name.like(f'%{search_term}%'))
+        if company_id:
+            query = query.filter(Pallet.company_id == company_id)
+        if min_price is not None:
+            query = query.filter(Pallet.price >= min_price)
+        if max_price is not None:
+            query = query.filter(Pallet.price <= max_price)
+        
+        pallets = query.all()
+        
+        output = io.StringIO()
+        writer = csv.writer(output)
+        
+        headers = ['Palet Adı', 'Firma', 'Fiyat (TL)', 'Toplam Hacim (desi)',
+                   'Üst Tahta Boyutları', 'Alt Tahta Boyutları',
+                   'Kapama Tahta Boyutları', 'Takoz Boyutları']
+        
+        writer.writerow(headers)
+        
+        for pallet in pallets:
+            upper_board = f"{pallet.upper_board_length}x{pallet.upper_board_width}x{pallet.board_thickness} ({pallet.upper_board_quantity} adet)"
+            lower_board = f"{pallet.lower_board_length}x{pallet.lower_board_width}x{pallet.board_thickness} ({pallet.lower_board_quantity} adet)"
+            closure = f"{pallet.closure_length}x{pallet.closure_width}x{pallet.board_thickness} ({pallet.closure_quantity} adet)"
+            block = f"{pallet.block_length}x{pallet.block_width}x{pallet.block_height} (9 adet)"
+            
+            writer.writerow([
+                pallet.name,
+                pallet.company.name,
+                f"{float(pallet.price):.2f}",
+                f"{float(pallet.total_volume):.2f}",
+                upper_board,
+                lower_board,
+                closure,
+                block
+            ])
+        
+        output.seek(0)
+        return send_file(
+            io.BytesIO(output.getvalue().encode('utf-8-sig')),
+            mimetype='text/csv',
+            as_attachment=True,
+            download_name='paletler.csv'
+        )
+    except Exception as e:
+        logger.error(f"CSV export error: {str(e)}")
+        return jsonify({'error': 'Dosya oluşturulurken bir hata oluştu: ' + str(e)}), 500
 
 @app.route('/export/pallets/pdf')
 @login_required
 def export_pallets_pdf():
-    search_term = request.args.get('search', '')
-    company_id = request.args.get('company_id', type=int)
-    min_price = request.args.get('min_price', type=float)
-    max_price = request.args.get('max_price', type=float)
-    
-    query = Pallet.query.join(Company).filter(Company.user_id == current_user.id)
-    
-    if search_term:
-        query = query.filter(Pallet.name.like(f'%{search_term}%'))
-    if company_id:
-        query = query.filter(Pallet.company_id == company_id)
-    if min_price is not None:
-        query = query.filter(Pallet.price >= min_price)
-    if max_price is not None:
-        query = query.filter(Pallet.price <= max_price)
-    
-    pallets = query.all()
-    
-    buffer = io.BytesIO()
-    doc = SimpleDocTemplate(buffer, pagesize=landscape(A4))
-    elements = []
-    
-    data = [['Palet Adı', 'Firma', 'Fiyat (TL)', 'Toplam Hacim (desi)',
-             'Üst Tahta', 'Alt Tahta', 'Kapama', 'Takoz']]
-    
-    for pallet in pallets:
-        upper_board = f"{pallet.upper_board_length}x{pallet.upper_board_width}x{pallet.board_thickness}\n({pallet.upper_board_quantity} adet)"
-        lower_board = f"{pallet.lower_board_length}x{pallet.lower_board_width}x{pallet.board_thickness}\n({pallet.lower_board_quantity} adet)"
-        closure = f"{pallet.closure_length}x{pallet.closure_width}x{pallet.board_thickness}\n({pallet.closure_quantity} adet)"
-        block = f"{pallet.block_length}x{pallet.block_width}x{pallet.block_height}\n(9 adet)"
+    try:
+        search_term = request.args.get('search', '')
+        company_id = request.args.get('company_id', type=int)
+        min_price = request.args.get('min_price', type=float)
+        max_price = request.args.get('max_price', type=float)
         
-        data.append([
-            pallet.name,
-            pallet.company.name,
-            f"{float(pallet.price):.2f}",
-            f"{float(pallet.total_volume):.2f}",
-            upper_board,
-            lower_board,
-            closure,
-            block
-        ])
-    
-    table = Table(data)
-    table.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
-        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-        ('FONTSIZE', (0, 0), (-1, 0), 14),
-        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
-        ('TEXTCOLOR', (0, 1), (-1, -1), colors.black),
-        ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
-        ('FONTSIZE', (0, 1), (-1, -1), 12),
-        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-        ('GRID', (0, 0), (-1, -1), 1, colors.black)
-    ]))
-    
-    elements.append(table)
-    doc.build(elements)
-    
-    buffer.seek(0)
-    return send_file(
-        buffer,
-        mimetype='application/pdf',
-        as_attachment=True,
-        download_name='paletler.pdf'
-    )
+        query = Pallet.query.join(Company).filter(Company.user_id == current_user.id)
+        
+        if search_term:
+            query = query.filter(Pallet.name.like(f'%{search_term}%'))
+        if company_id:
+            query = query.filter(Pallet.company_id == company_id)
+        if min_price is not None:
+            query = query.filter(Pallet.price >= min_price)
+        if max_price is not None:
+            query = query.filter(Pallet.price <= max_price)
+        
+        pallets = query.all()
+        
+        buffer = io.BytesIO()
+        doc = SimpleDocTemplate(buffer, pagesize=landscape(A4))
+        elements = []
+        
+        data = [['Palet Adı', 'Firma', 'Fiyat (TL)', 'Toplam Hacim (desi)',
+                 'Üst Tahta', 'Alt Tahta', 'Kapama', 'Takoz']]
+        
+        for pallet in pallets:
+            upper_board = f"{pallet.upper_board_length}x{pallet.upper_board_width}x{pallet.board_thickness}\n({pallet.upper_board_quantity} adet)"
+            lower_board = f"{pallet.lower_board_length}x{pallet.lower_board_width}x{pallet.board_thickness}\n({pallet.lower_board_quantity} adet)"
+            closure = f"{pallet.closure_length}x{pallet.closure_width}x{pallet.board_thickness}\n({pallet.closure_quantity} adet)"
+            block = f"{pallet.block_length}x{pallet.block_width}x{pallet.block_height}\n(9 adet)"
+            
+            data.append([
+                pallet.name,
+                pallet.company.name,
+                f"{float(pallet.price):.2f}",
+                f"{float(pallet.total_volume):.2f}",
+                upper_board,
+                lower_board,
+                closure,
+                block
+            ])
+        
+        table = Table(data)
+        table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, 0), 14),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+            ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+            ('TEXTCOLOR', (0, 1), (-1, -1), colors.black),
+            ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+            ('FONTSIZE', (0, 1), (-1, -1), 12),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('GRID', (0, 0), (-1, -1), 1, colors.black)
+        ]))
+        
+        elements.append(table)
+        doc.build(elements)
+        
+        buffer.seek(0)
+        return send_file(
+            buffer,
+            mimetype='application/pdf',
+            as_attachment=True,
+            download_name='paletler.pdf'
+        )
+    except Exception as e:
+        logger.error(f"PDF export error: {str(e)}")
+        return jsonify({'error': 'Dosya oluşturulurken bir hata oluştu: ' + str(e)}), 500
