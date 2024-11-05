@@ -37,7 +37,7 @@ try:
     DATABASE_URL = os.environ.get('DATABASE_URL')
     
     if not DATABASE_URL:
-        # Construct MySQL URL from individual parameters
+        # Get MySQL connection parameters
         db_params = {
             'user': os.environ.get('PGUSER'),
             'password': os.environ.get('PGPASSWORD'),
@@ -51,9 +51,11 @@ try:
         if missing_params:
             raise ValueError(f"Missing database parameters: {', '.join(missing_params)}")
         
+        # Construct MySQL connection URL with proper charset
         DATABASE_URL = (
             f"mysql+pymysql://{db_params['user']}:{db_params['password']}@"
             f"{db_params['host']}:{db_params['port']}/{db_params['database']}"
+            "?charset=utf8mb4"
         )
 
     # MySQL specific configuration
@@ -63,10 +65,7 @@ try:
         "pool_recycle": 300,
         "pool_timeout": 900,
         "pool_size": 10,
-        "max_overflow": 5,
-        "connect_args": {
-            "charset": "utf8mb4"
-        }
+        "max_overflow": 5
     }
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
@@ -101,7 +100,7 @@ def not_found_error(error):
 
 @app.errorhandler(500)
 def internal_error(error):
-    logger.error(f"500 error: {str(error)}")
+    logger.error(f"500 error: {str(e)}")
     if hasattr(db, 'session'):
         db.session.rollback()
     return render_template('500.html'), 500
