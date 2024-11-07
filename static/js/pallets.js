@@ -1,4 +1,4 @@
-// Filter and sort function - moved outside DOMContentLoaded
+// Filter and sort function - defined globally
 function filterAndSortPallets() {
     const searchTerm = document.getElementById('searchName')?.value.toLowerCase() || '';
     const companyId = document.getElementById('filterCompany')?.value || '';
@@ -54,6 +54,19 @@ function filterAndSortPallets() {
     }
 }
 
+function getSortValue(item, sortOrder) {
+    if (sortOrder.startsWith('name')) {
+        return item.querySelector('td:first-child, .accordion-button')?.textContent.toLowerCase() || '';
+    }
+    if (sortOrder.includes('price')) {
+        return parseFloat(item.dataset.price) || 0;
+    }
+    if (sortOrder.includes('volume')) {
+        return parseFloat(item.dataset.volume) || 0;
+    }
+    return 0;
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize filter elements
     const filterElements = {
@@ -70,6 +83,9 @@ document.addEventListener('DOMContentLoaded', function() {
             element.addEventListener('input', filterAndSortPallets);
         }
     });
+
+    // Initialize filterAndSortPallets on load
+    filterAndSortPallets();
 
     // Initialize save button event listener
     const saveButton = document.getElementById('savePallet');
@@ -134,19 +150,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 });
-
-function getSortValue(item, sortOrder) {
-    if (sortOrder.startsWith('name')) {
-        return item.querySelector('td:first-child, .accordion-button')?.textContent.toLowerCase() || '';
-    }
-    if (sortOrder.includes('price')) {
-        return parseFloat(item.dataset.price) || 0;
-    }
-    if (sortOrder.includes('volume')) {
-        return parseFloat(item.dataset.volume) || 0;
-    }
-    return 0;
-}
 
 function calculateDesi() {
     try {
