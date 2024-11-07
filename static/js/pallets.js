@@ -13,7 +13,7 @@ function getSortValue(item, sortOrder) {
     return 0;
 }
 
-// Main filter and sort function - defined at the top level
+// Main filter and sort function - defined in global scope
 function filterAndSortPallets() {
     try {
         const searchTerm = document.getElementById('searchName')?.value.toLowerCase() || '';
@@ -100,51 +100,20 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize filtering on load
     filterAndSortPallets();
 
-    // Initialize save button event listener
-    const saveButton = document.getElementById('savePallet');
-    if (saveButton) {
-        saveButton.addEventListener('click', handleSavePallet);
-    }
+    // Add event listeners for real-time desi calculations
+    const dimensionInputs = [
+        'boardThickness',
+        'upperBoardLength', 'upperBoardWidth', 'upperBoardQuantity',
+        'lowerBoardLength', 'lowerBoardWidth', 'lowerBoardQuantity',
+        'closureLength', 'closureWidth', 'closureQuantity',
+        'blockLength', 'blockWidth', 'blockHeight'
+    ];
 
-    // Initialize edit buttons
-    document.querySelectorAll('.edit-pallet').forEach(button => {
-        button.addEventListener('click', async (e) => {
-            try {
-                const palletId = e.currentTarget.dataset.id;
-                const response = await fetch(`/api/pallets/${palletId}`);
-                if (!response.ok) {
-                    throw new Error('Palet bilgileri alınamadı');
-                }
-                const pallet = await response.json();
-                populatePalletForm(pallet);
-                new bootstrap.Modal(document.getElementById('palletModal')).show();
-            } catch (error) {
-                console.error('Düzenleme hatası:', error);
-                alert('Palet bilgileri yüklenirken bir hata oluştu');
-            }
-        });
-    });
-
-    // Initialize delete buttons
-    document.querySelectorAll('.delete-pallet').forEach(button => {
-        button.addEventListener('click', async (e) => {
-            if (!confirm('Bu paleti silmek istediğinizden emin misiniz?')) {
-                return;
-            }
-            try {
-                const palletId = e.currentTarget.dataset.id;
-                const response = await fetch(`/api/pallets/${palletId}`, {
-                    method: 'DELETE'
-                });
-                if (!response.ok) {
-                    throw new Error('Palet silinemedi');
-                }
-                window.location.reload();
-            } catch (error) {
-                console.error('Silme hatası:', error);
-                alert('Palet silinirken bir hata oluştu');
-            }
-        });
+    dimensionInputs.forEach(inputId => {
+        const input = document.getElementById(inputId);
+        if (input) {
+            input.addEventListener('input', calculateDesi);
+        }
     });
 });
 
@@ -152,7 +121,7 @@ document.addEventListener('DOMContentLoaded', function() {
 function calculateDesi() {
     try {
         const getValue = (id) => parseFloat(document.getElementById(id)?.value) || 0;
-
+        
         const thickness = getValue('boardThickness');
         
         // Upper boards
@@ -199,7 +168,7 @@ function calculateDesi() {
     }
 }
 
-// Form validation function
+// Form validation and submission functions
 function validatePalletData(data) {
     const requiredFields = {
         name: 'Palet adı',
@@ -231,7 +200,6 @@ function validatePalletData(data) {
     return true;
 }
 
-// Save pallet function
 async function handleSavePallet() {
     try {
         const form = document.getElementById('palletForm');
@@ -306,3 +274,47 @@ function populatePalletForm(pallet) {
     
     calculateDesi();
 }
+
+// Initialize event listeners for edit and delete buttons
+document.addEventListener('DOMContentLoaded', function() {
+    // Edit buttons
+    document.querySelectorAll('.edit-pallet').forEach(button => {
+        button.addEventListener('click', async (e) => {
+            try {
+                const palletId = e.currentTarget.dataset.id;
+                const response = await fetch(`/api/pallets/${palletId}`);
+                if (!response.ok) {
+                    throw new Error('Palet bilgileri alınamadı');
+                }
+                const pallet = await response.json();
+                populatePalletForm(pallet);
+                new bootstrap.Modal(document.getElementById('palletModal')).show();
+            } catch (error) {
+                console.error('Düzenleme hatası:', error);
+                alert('Palet bilgileri yüklenirken bir hata oluştu');
+            }
+        });
+    });
+
+    // Delete buttons
+    document.querySelectorAll('.delete-pallet').forEach(button => {
+        button.addEventListener('click', async (e) => {
+            if (!confirm('Bu paleti silmek istediğinizden emin misiniz?')) {
+                return;
+            }
+            try {
+                const palletId = e.currentTarget.dataset.id;
+                const response = await fetch(`/api/pallets/${palletId}`, {
+                    method: 'DELETE'
+                });
+                if (!response.ok) {
+                    throw new Error('Palet silinemedi');
+                }
+                window.location.reload();
+            } catch (error) {
+                console.error('Silme hatası:', error);
+                alert('Palet silinirken bir hata oluştu');
+            }
+        });
+    });
+});

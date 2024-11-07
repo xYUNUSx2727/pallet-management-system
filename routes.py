@@ -43,39 +43,6 @@ def login():
         flash('Geçersiz kullanıcı adı veya şifre', 'danger')
     return render_template('login.html')
 
-@app.route('/register', methods=['GET', 'POST'])
-def register():
-    if current_user.is_authenticated:
-        return redirect(url_for('dashboard'))
-    
-    if request.method == 'POST':
-        username = request.form.get('username')
-        email = request.form.get('email')
-        password = request.form.get('password')
-        confirm_password = request.form.get('confirm_password')
-        
-        if password != confirm_password:
-            flash('Şifreler eşleşmiyor', 'danger')
-            return redirect(url_for('register'))
-        
-        if User.query.filter_by(username=username).first():
-            flash('Bu kullanıcı adı zaten kullanılıyor', 'danger')
-            return redirect(url_for('register'))
-        
-        if User.query.filter_by(email=email).first():
-            flash('Bu e-posta adresi zaten kullanılıyor', 'danger')
-            return redirect(url_for('register'))
-        
-        user = User(username=username, email=email)
-        user.set_password(password)
-        db.session.add(user)
-        db.session.commit()
-        
-        flash('Hesabınız başarıyla oluşturuldu', 'success')
-        return redirect(url_for('login'))
-    
-    return render_template('register.html')
-
 @app.route('/logout')
 @login_required
 def logout():
@@ -169,6 +136,8 @@ def export_pallets_pdf():
         min_price = request.args.get('min_price', type=float)
         max_price = request.args.get('max_price', type=float)
         
+        logger.info(f"Starting PDF export with filters: search={search_term}, company_id={company_id}, price_range={min_price}-{max_price}")
+        
         # Build query with filters
         query = Pallet.query.join(Company).filter(Company.user_id == current_user.id)
         
@@ -199,7 +168,8 @@ def export_pallets_pdf():
             leftMargin=30,
             topMargin=30,
             bottomMargin=30,
-            title='Palet Listesi'
+            title='Palet Listesi',
+            author='Palet Yönetim Sistemi'
         )
         
         # Create styles
@@ -209,111 +179,115 @@ def export_pallets_pdf():
         normal_style = ParagraphStyle(
             'CustomNormal',
             parent=styles['Normal'],
-            fontName='Helvetica',
             fontSize=9,
             leading=12,
             alignment=1,  # Center alignment
-            spaceAfter=6
+            spaceAfter=6,
+            encoding='utf-8'  # Handle Turkish characters
         )
         
         # Title style
         title_style = ParagraphStyle(
             'CustomTitle',
             parent=styles['Title'],
-            fontName='Helvetica-Bold',
             fontSize=16,
             leading=20,
             alignment=1,
-            spaceAfter=20
+            spaceAfter=20,
+            encoding='utf-8'  # Handle Turkish characters
         )
         
         # Prepare document elements
         elements = []
         
-        # Add title
-        elements.append(Paragraph('Palet Listesi', title_style))
-        
-        # Prepare table data
-        headers = [
-            'Palet Adı', 'Firma', 'Fiyat (TL)', 'Toplam Hacim (desi)',
-            'Üst Tahta', 'Alt Tahta', 'Kapama', 'Takoz'
-        ]
-        data = [[Paragraph(header, normal_style) for header in headers]]
-        
-        # Add pallet data
-        for pallet in pallets:
-            try:
-                row = [
-                    Paragraph(str(pallet.name), normal_style),
-                    Paragraph(str(pallet.company.name), normal_style),
-                    Paragraph(f"{float(pallet.price):.2f}", normal_style),
-                    Paragraph(f"{float(pallet.total_volume):.2f}", normal_style),
-                    Paragraph(
-                        f"{float(pallet.upper_board_length)}x{float(pallet.upper_board_width)}x{float(pallet.board_thickness)} "
-                        f"({pallet.upper_board_quantity} adet)", normal_style
-                    ),
-                    Paragraph(
-                        f"{float(pallet.lower_board_length)}x{float(pallet.lower_board_width)}x{float(pallet.board_thickness)} "
-                        f"({pallet.lower_board_quantity} adet)", normal_style
-                    ),
-                    Paragraph(
-                        f"{float(pallet.closure_length)}x{float(pallet.closure_width)}x{float(pallet.board_thickness)} "
-                        f"({pallet.closure_quantity} adet)", normal_style
-                    ),
-                    Paragraph(
-                        f"{float(pallet.block_length)}x{float(pallet.block_width)}x{float(pallet.block_height)} "
-                        f"(9 adet)", normal_style
-                    )
-                ]
-                data.append(row)
-            except Exception as row_error:
-                logger.error(f"Error processing pallet row: {str(row_error)}")
-                continue
-        
-        # Create table with adjusted column widths
-        colWidths = [90, 80, 60, 70, 100, 100, 100, 100]
-        table = Table(data, colWidths=colWidths, repeatRows=1)
-        
-        # Apply table styling
-        table.setStyle(TableStyle([
-            # Header styling
-            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#2a2e35')),
-            ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
-            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-            ('FONTSIZE', (0, 0), (-1, 0), 11),
-            ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-            
-            # Content styling
-            ('BACKGROUND', (0, 1), (-1, -1), colors.white),
-            ('TEXTCOLOR', (0, 1), (-1, -1), colors.black),
-            ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
-            ('FONTSIZE', (0, 1), (-1, -1), 9),
-            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-            ('GRID', (0, 0), (-1, -1), 1, colors.black),
-            ('ROWHEIGHT', (0, 0), (-1, -1), 40),
-        ]))
-        
-        elements.append(table)
-
         try:
-            # Build PDF
-            doc.build(elements)
-            buffer.seek(0)
+            # Add title
+            elements.append(Paragraph('Palet Listesi', title_style))
             
-            response = send_file(
-                buffer,
-                mimetype='application/pdf',
-                as_attachment=True,
-                download_name='paletler.pdf'
-            )
+            # Prepare table data
+            headers = [
+                'Palet Adı', 'Firma', 'Fiyat (TL)', 'Toplam Hacim (desi)',
+                'Üst Tahta', 'Alt Tahta', 'Kapama', 'Takoz'
+            ]
+            data = [[Paragraph(header, normal_style) for header in headers]]
             
-            return response
+            # Add pallet data with proper error handling for each row
+            for pallet in pallets:
+                try:
+                    row = [
+                        Paragraph(str(pallet.name), normal_style),
+                        Paragraph(str(pallet.company.name), normal_style),
+                        Paragraph(f"{float(pallet.price):.2f}", normal_style),
+                        Paragraph(f"{float(pallet.total_volume):.2f}", normal_style),
+                        Paragraph(
+                            f"{float(pallet.upper_board_length)}x{float(pallet.upper_board_width)}x{float(pallet.board_thickness)} "
+                            f"({pallet.upper_board_quantity} adet)", normal_style
+                        ),
+                        Paragraph(
+                            f"{float(pallet.lower_board_length)}x{float(pallet.lower_board_width)}x{float(pallet.board_thickness)} "
+                            f"({pallet.lower_board_quantity} adet)", normal_style
+                        ),
+                        Paragraph(
+                            f"{float(pallet.closure_length)}x{float(pallet.closure_width)}x{float(pallet.board_thickness)} "
+                            f"({pallet.closure_quantity} adet)", normal_style
+                        ),
+                        Paragraph(
+                            f"{float(pallet.block_length)}x{float(pallet.block_width)}x{float(pallet.block_height)} "
+                            f"(9 adet)", normal_style
+                        )
+                    ]
+                    data.append(row)
+                except Exception as row_error:
+                    logger.error(f"Error processing pallet row {pallet.id}: {str(row_error)}")
+                    continue
             
-        except Exception as build_error:
-            logger.error(f"Error building PDF: {str(build_error)}")
-            flash('PDF oluşturulurken bir hata oluştu. Lütfen daha sonra tekrar deneyin.', 'danger')
-            return redirect(url_for('pallets'))
+            # Create table with adjusted column widths
+            colWidths = [90, 80, 60, 70, 100, 100, 100, 100]
+            table = Table(data, colWidths=colWidths, repeatRows=1)
+            
+            # Apply table styling
+            table.setStyle(TableStyle([
+                # Header styling
+                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#2a2e35')),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                ('FONTSIZE', (0, 0), (-1, 0), 11),
+                ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+                
+                # Content styling
+                ('BACKGROUND', (0, 1), (-1, -1), colors.white),
+                ('TEXTCOLOR', (0, 1), (-1, -1), colors.black),
+                ('FONTSIZE', (0, 1), (-1, -1), 9),
+                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+                ('GRID', (0, 0), (-1, -1), 1, colors.black),
+                ('ROWHEIGHT', (0, 0), (-1, -1), 40),
+            ]))
+            
+            elements.append(table)
+            
+            # Build PDF with error handling
+            try:
+                doc.build(elements)
+                buffer.seek(0)
+                
+                logger.info("PDF generated successfully")
+                
+                response = send_file(
+                    buffer,
+                    mimetype='application/pdf',
+                    as_attachment=True,
+                    download_name='paletler.pdf'
+                )
+                
+                return response
+                
+            except Exception as build_error:
+                logger.error(f"Error building PDF: {str(build_error)}")
+                raise
+                
+        except Exception as element_error:
+            logger.error(f"Error creating PDF elements: {str(element_error)}")
+            raise
         
     except Exception as e:
         logger.error(f"PDF export error: {str(e)}")
