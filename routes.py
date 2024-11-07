@@ -10,8 +10,6 @@ from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4, landscape
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.pdfbase import pdfmetrics
-from reportlab.pdfbase.ttfonts import TTFont
 import logging
 
 logger = logging.getLogger(__name__)
@@ -193,7 +191,7 @@ def export_pallets_pdf():
         # Create PDF buffer
         buffer = io.BytesIO()
         
-        # Set up the document with custom page size and margins
+        # Set up the document with landscape orientation
         doc = SimpleDocTemplate(
             buffer,
             pagesize=landscape(A4),
@@ -203,10 +201,10 @@ def export_pallets_pdf():
             bottomMargin=30
         )
         
-        # Create styles with proper encoding
+        # Create styles
         styles = getSampleStyleSheet()
         
-        # Custom style for normal text with proper encoding
+        # Custom style for normal text
         normal_style = ParagraphStyle(
             'CustomNormal',
             parent=styles['Normal'],
@@ -217,7 +215,7 @@ def export_pallets_pdf():
             encoding='utf-8'
         )
         
-        # Title style with proper encoding
+        # Title style
         title_style = ParagraphStyle(
             'CustomTitle',
             parent=styles['Title'],
@@ -235,7 +233,7 @@ def export_pallets_pdf():
         # Add title
         elements.append(Paragraph('Palet Listesi', title_style))
         
-        # Prepare table data with proper text encoding
+        # Prepare table data with Turkish characters
         data = [[
             Paragraph('Palet Adı', normal_style),
             Paragraph('Firma', normal_style),
@@ -250,7 +248,7 @@ def export_pallets_pdf():
         def clean_text(text):
             """Clean and encode text for PDF"""
             try:
-                return str(text).strip()
+                return str(text).encode('utf-8').decode('utf-8').strip()
             except Exception as e:
                 logger.error(f"Error cleaning text: {str(e)}")
                 return str(text)
@@ -286,7 +284,8 @@ def export_pallets_pdf():
             raise
         
         # Create table with styling
-        table = Table(data, repeatRows=1)
+        colWidths = [100, 80, 60, 70, 100, 100, 100, 100]  # Adjusted column widths
+        table = Table(data, colWidths=colWidths, repeatRows=1)
         table.setStyle(TableStyle([
             # Header styling
             ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#2a2e35')),
@@ -299,24 +298,32 @@ def export_pallets_pdf():
             # Content styling
             ('BACKGROUND', (0, 1), (-1, -1), colors.white),
             ('TEXTCOLOR', (0, 1), (-1, -1), colors.black),
+            ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+            ('FONTSIZE', (0, 1), (-1, -1), 10),
             ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
             ('GRID', (0, 0), (-1, -1), 1, colors.black),
-            ('ROWHEIGHT', (0, 0), (-1, -1), 40)
+            ('ROWHEIGHT', (0, 0), (-1, -1), 40),
+            ('WORDWRAP', (0, 0), (-1, -1), True)
         ]))
         
         elements.append(table)
-        
+
         try:
             # Build PDF with error handling
             doc.build(elements)
             buffer.seek(0)
             
-            return send_file(
+            response = send_file(
                 buffer,
                 mimetype='application/pdf',
                 as_attachment=True,
                 download_name='paletler.pdf'
             )
+            
+            # Add Turkish character encoding headers
+            response.headers['Content-Type'] = 'application/pdf; charset=utf-8'
+            return response
+            
         except Exception as build_error:
             logger.error(f"Error building PDF: {str(build_error)}")
             raise
