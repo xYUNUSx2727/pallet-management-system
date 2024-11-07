@@ -1,3 +1,59 @@
+// Filter and sort function - moved outside DOMContentLoaded
+function filterAndSortPallets() {
+    const searchTerm = document.getElementById('searchName')?.value.toLowerCase() || '';
+    const companyId = document.getElementById('filterCompany')?.value || '';
+    const minPrice = parseFloat(document.getElementById('minPrice')?.value) || 0;
+    const maxPrice = parseFloat(document.getElementById('maxPrice')?.value) || Infinity;
+    const sortOrder = document.getElementById('sortOrder')?.value;
+
+    const palletsList = document.getElementById('palletsList');
+    const palletsAccordion = document.getElementById('palletsAccordion');
+    const noResults = document.getElementById('noResults');
+
+    let items = [];
+    if (palletsList) {
+        items = Array.from(palletsList.getElementsByTagName('tr'));
+    } else if (palletsAccordion) {
+        items = Array.from(palletsAccordion.getElementsByClassName('accordion-item'));
+    }
+
+    let visibleCount = 0;
+
+    items.forEach(item => {
+        const itemName = item.querySelector('td:first-child, .accordion-button')?.textContent.toLowerCase() || '';
+        const itemCompanyId = item.dataset.companyId;
+        const itemPrice = parseFloat(item.dataset.price) || 0;
+
+        const matchesSearch = itemName.includes(searchTerm);
+        const matchesCompany = !companyId || itemCompanyId === companyId;
+        const matchesPrice = itemPrice >= minPrice && (!maxPrice || itemPrice <= maxPrice);
+
+        const isVisible = matchesSearch && matchesCompany && matchesPrice;
+        if (isVisible) visibleCount++;
+
+        item.style.display = isVisible ? '' : 'none';
+    });
+
+    if (visibleCount > 0 && sortOrder) {
+        const sortedItems = Array.from(items)
+            .filter(item => item.style.display !== 'none')
+            .sort((a, b) => {
+                const aValue = getSortValue(a, sortOrder);
+                const bValue = getSortValue(b, sortOrder);
+                return sortOrder.includes('desc') ? bValue - aValue : aValue - bValue;
+            });
+
+        const container = palletsList || palletsAccordion;
+        if (container) {
+            sortedItems.forEach(item => container.appendChild(item));
+        }
+    }
+
+    if (noResults) {
+        noResults.classList.toggle('d-none', visibleCount > 0);
+    }
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize filter elements
     const filterElements = {
@@ -78,62 +134,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 });
-
-// Global function for filtering and sorting pallets
-window.filterAndSortPallets = function() {
-    const searchTerm = document.getElementById('searchName')?.value.toLowerCase() || '';
-    const companyId = document.getElementById('filterCompany')?.value || '';
-    const minPrice = parseFloat(document.getElementById('minPrice')?.value) || 0;
-    const maxPrice = parseFloat(document.getElementById('maxPrice')?.value) || Infinity;
-    const sortOrder = document.getElementById('sortOrder')?.value;
-
-    const palletsList = document.getElementById('palletsList');
-    const palletsAccordion = document.getElementById('palletsAccordion');
-    const noResults = document.getElementById('noResults');
-
-    let items = [];
-    if (palletsList) {
-        items = Array.from(palletsList.getElementsByTagName('tr'));
-    } else if (palletsAccordion) {
-        items = Array.from(palletsAccordion.getElementsByClassName('accordion-item'));
-    }
-
-    let visibleCount = 0;
-
-    items.forEach(item => {
-        const itemName = item.querySelector('td:first-child, .accordion-button')?.textContent.toLowerCase() || '';
-        const itemCompanyId = item.dataset.companyId;
-        const itemPrice = parseFloat(item.dataset.price) || 0;
-
-        const matchesSearch = itemName.includes(searchTerm);
-        const matchesCompany = !companyId || itemCompanyId === companyId;
-        const matchesPrice = itemPrice >= minPrice && (!maxPrice || itemPrice <= maxPrice);
-
-        const isVisible = matchesSearch && matchesCompany && matchesPrice;
-        if (isVisible) visibleCount++;
-
-        item.style.display = isVisible ? '' : 'none';
-    });
-
-    if (visibleCount > 0 && sortOrder) {
-        const sortedItems = Array.from(items)
-            .filter(item => item.style.display !== 'none')
-            .sort((a, b) => {
-                const aValue = getSortValue(a, sortOrder);
-                const bValue = getSortValue(b, sortOrder);
-                return sortOrder.includes('desc') ? bValue - aValue : aValue - bValue;
-            });
-
-        const container = palletsList || palletsAccordion;
-        if (container) {
-            sortedItems.forEach(item => container.appendChild(item));
-        }
-    }
-
-    if (noResults) {
-        noResults.classList.toggle('d-none', visibleCount > 0);
-    }
-};
 
 function getSortValue(item, sortOrder) {
     if (sortOrder.startsWith('name')) {

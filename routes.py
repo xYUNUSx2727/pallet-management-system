@@ -96,6 +96,69 @@ def pallets():
     pallets = query.all()
     return render_template('pallets.html', pallets=pallets, companies=companies)
 
+@app.route('/export/pallets/csv')
+@login_required
+def export_pallets_csv():
+    try:
+        # Get filter parameters
+        search_term = request.args.get('search', '')
+        company_id = request.args.get('company_id', type=int)
+        min_price = request.args.get('min_price', type=float)
+        max_price = request.args.get('max_price', type=float)
+        
+        # Build query with filters
+        query = Pallet.query.join(Company).filter(Company.user_id == current_user.id)
+        
+        if search_term:
+            query = query.filter(Pallet.name.like(f'%{search_term}%'))
+        if company_id:
+            query = query.filter(Pallet.company_id == company_id)
+        if min_price is not None:
+            query = query.filter(Pallet.price >= min_price)
+        if max_price is not None:
+            query = query.filter(Pallet.price <= max_price)
+            
+        pallets = query.all()
+        
+        if not pallets:
+            flash('Dışa aktarılacak palet bulunamadı.', 'warning')
+            return redirect(url_for('pallets'))
+        
+        # Create CSV in memory
+        output = io.StringIO()
+        writer = csv.writer(output)
+        
+        # Write headers
+        writer.writerow(['Palet Adı', 'Firma', 'Fiyat (TL)', 'Toplam Hacim (desi)',
+                        'Üst Tahta', 'Alt Tahta', 'Kapama', 'Takoz'])
+        
+        # Write data
+        for pallet in pallets:
+            writer.writerow([
+                pallet.name,
+                pallet.company.name,
+                f"{float(pallet.price):.2f}",
+                f"{float(pallet.total_volume):.2f}",
+                f"{float(pallet.upper_board_length)}x{float(pallet.upper_board_width)}x{float(pallet.board_thickness)} ({pallet.upper_board_quantity} adet)",
+                f"{float(pallet.lower_board_length)}x{float(pallet.lower_board_width)}x{float(pallet.board_thickness)} ({pallet.lower_board_quantity} adet)",
+                f"{float(pallet.closure_length)}x{float(pallet.closure_width)}x{float(pallet.board_thickness)} ({pallet.closure_quantity} adet)",
+                f"{float(pallet.block_length)}x{float(pallet.block_width)}x{float(pallet.block_height)} (9 adet)"
+            ])
+        
+        # Prepare response
+        output.seek(0)
+        return send_file(
+            io.BytesIO(output.getvalue().encode('utf-8')),
+            mimetype='text/csv',
+            as_attachment=True,
+            download_name='paletler.csv'
+        )
+        
+    except Exception as e:
+        logger.error(f"CSV export error: {str(e)}")
+        flash('CSV oluşturulurken bir hata oluştu. Lütfen daha sonra tekrar deneyin.', 'danger')
+        return redirect(url_for('pallets'))
+
 @app.route('/export/pallets/pdf')
 @login_required
 def export_pallets_pdf():
@@ -141,13 +204,14 @@ def export_pallets_pdf():
         # Create styles
         styles = getSampleStyleSheet()
         
-        # Custom style for normal text with encoding
+        # Custom style for normal text
         normal_style = ParagraphStyle(
             'CustomNormal',
             parent=styles['Normal'],
             fontName='Helvetica',
             fontSize=10,
-            leading=12
+            leading=12,
+            alignment=1  # Center alignment
         )
         
         # Title style
@@ -179,31 +243,35 @@ def export_pallets_pdf():
             Paragraph('Takoz', normal_style)
         ]]
         
-        # Add pallet data
-        for pallet in pallets:
-            row = [
-                Paragraph(str(pallet.name), normal_style),
-                Paragraph(str(pallet.company.name), normal_style),
-                Paragraph(f"{float(pallet.price):.2f}", normal_style),
-                Paragraph(f"{float(pallet.total_volume):.2f}", normal_style),
-                Paragraph(
-                    f"{float(pallet.upper_board_length)}x{float(pallet.upper_board_width)}x{float(pallet.board_thickness)}\n"
-                    f"({pallet.upper_board_quantity} adet)", normal_style
-                ),
-                Paragraph(
-                    f"{float(pallet.lower_board_length)}x{float(pallet.lower_board_width)}x{float(pallet.board_thickness)}\n"
-                    f"({pallet.lower_board_quantity} adet)", normal_style
-                ),
-                Paragraph(
-                    f"{float(pallet.closure_length)}x{float(pallet.closure_width)}x{float(pallet.board_thickness)}\n"
-                    f"({pallet.closure_quantity} adet)", normal_style
-                ),
-                Paragraph(
-                    f"{float(pallet.block_length)}x{float(pallet.block_width)}x{float(pallet.block_height)}\n"
-                    f"(9 adet)", normal_style
-                )
-            ]
-            data.append(row)
+        try:
+            # Add pallet data
+            for pallet in pallets:
+                row = [
+                    Paragraph(str(pallet.name), normal_style),
+                    Paragraph(str(pallet.company.name), normal_style),
+                    Paragraph(f"{float(pallet.price):.2f}", normal_style),
+                    Paragraph(f"{float(pallet.total_volume):.2f}", normal_style),
+                    Paragraph(
+                        f"{float(pallet.upper_board_length)}x{float(pallet.upper_board_width)}x{float(pallet.board_thickness)} "
+                        f"({pallet.upper_board_quantity} adet)", normal_style
+                    ),
+                    Paragraph(
+                        f"{float(pallet.lower_board_length)}x{float(pallet.lower_board_width)}x{float(pallet.board_thickness)} "
+                        f"({pallet.lower_board_quantity} adet)", normal_style
+                    ),
+                    Paragraph(
+                        f"{float(pallet.closure_length)}x{float(pallet.closure_width)}x{float(pallet.board_thickness)} "
+                        f"({pallet.closure_quantity} adet)", normal_style
+                    ),
+                    Paragraph(
+                        f"{float(pallet.block_length)}x{float(pallet.block_width)}x{float(pallet.block_height)} "
+                        f"(9 adet)", normal_style
+                    )
+                ]
+                data.append(row)
+        except Exception as data_error:
+            logger.error(f"Error processing pallet data: {str(data_error)}")
+            raise
         
         # Create table with styling
         table = Table(data, repeatRows=1)
@@ -226,16 +294,20 @@ def export_pallets_pdf():
         
         elements.append(table)
         
-        # Build PDF
-        doc.build(elements)
-        buffer.seek(0)
-        
-        return send_file(
-            buffer,
-            mimetype='application/pdf',
-            as_attachment=True,
-            download_name='paletler.pdf'
-        )
+        try:
+            # Build PDF
+            doc.build(elements)
+            buffer.seek(0)
+            
+            return send_file(
+                buffer,
+                mimetype='application/pdf',
+                as_attachment=True,
+                download_name='paletler.pdf'
+            )
+        except Exception as build_error:
+            logger.error(f"Error building PDF: {str(build_error)}")
+            raise
         
     except Exception as e:
         logger.error(f"PDF export error: {str(e)}")
