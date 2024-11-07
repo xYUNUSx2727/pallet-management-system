@@ -10,6 +10,8 @@ from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4, landscape
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
 import logging
 
 logger = logging.getLogger(__name__)
@@ -201,20 +203,21 @@ def export_pallets_pdf():
             bottomMargin=30
         )
         
-        # Create styles
+        # Create styles with proper encoding
         styles = getSampleStyleSheet()
         
-        # Custom style for normal text
+        # Custom style for normal text with proper encoding
         normal_style = ParagraphStyle(
             'CustomNormal',
             parent=styles['Normal'],
             fontName='Helvetica',
             fontSize=10,
             leading=12,
-            alignment=1  # Center alignment
+            alignment=1,  # Center alignment
+            encoding='utf-8'
         )
         
-        # Title style
+        # Title style with proper encoding
         title_style = ParagraphStyle(
             'CustomTitle',
             parent=styles['Title'],
@@ -222,7 +225,8 @@ def export_pallets_pdf():
             fontSize=16,
             leading=20,
             alignment=1,
-            spaceAfter=20
+            spaceAfter=20,
+            encoding='utf-8'
         )
         
         # Prepare document elements
@@ -231,7 +235,7 @@ def export_pallets_pdf():
         # Add title
         elements.append(Paragraph('Palet Listesi', title_style))
         
-        # Prepare table data
+        # Prepare table data with proper text encoding
         data = [[
             Paragraph('Palet Adı', normal_style),
             Paragraph('Firma', normal_style),
@@ -243,12 +247,20 @@ def export_pallets_pdf():
             Paragraph('Takoz', normal_style)
         ]]
         
+        def clean_text(text):
+            """Clean and encode text for PDF"""
+            try:
+                return str(text).strip()
+            except Exception as e:
+                logger.error(f"Error cleaning text: {str(e)}")
+                return str(text)
+        
         try:
-            # Add pallet data
+            # Add pallet data with proper text cleaning
             for pallet in pallets:
                 row = [
-                    Paragraph(str(pallet.name), normal_style),
-                    Paragraph(str(pallet.company.name), normal_style),
+                    Paragraph(clean_text(pallet.name), normal_style),
+                    Paragraph(clean_text(pallet.company.name), normal_style),
                     Paragraph(f"{float(pallet.price):.2f}", normal_style),
                     Paragraph(f"{float(pallet.total_volume):.2f}", normal_style),
                     Paragraph(
@@ -295,7 +307,7 @@ def export_pallets_pdf():
         elements.append(table)
         
         try:
-            # Build PDF
+            # Build PDF with error handling
             doc.build(elements)
             buffer.seek(0)
             
