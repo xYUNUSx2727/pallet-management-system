@@ -79,7 +79,8 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
-function filterAndSortPallets() {
+// Global function for filtering and sorting pallets
+window.filterAndSortPallets = function() {
     const searchTerm = document.getElementById('searchName')?.value.toLowerCase() || '';
     const companyId = document.getElementById('filterCompany')?.value || '';
     const minPrice = parseFloat(document.getElementById('minPrice')?.value) || 0;
@@ -132,7 +133,7 @@ function filterAndSortPallets() {
     if (noResults) {
         noResults.classList.toggle('d-none', visibleCount > 0);
     }
-}
+};
 
 function getSortValue(item, sortOrder) {
     if (sortOrder.startsWith('name')) {
@@ -228,7 +229,7 @@ function validatePalletData(data) {
     return true;
 }
 
-async function handleSavePallet() {
+function handleSavePallet() {
     try {
         const form = document.getElementById('palletForm');
         if (!form) {
@@ -260,22 +261,30 @@ async function handleSavePallet() {
         const url = palletId ? `/api/pallets/${palletId}` : '/api/pallets';
         const method = palletId ? 'PUT' : 'POST';
 
-        const response = await fetch(url, {
+        fetch(url, {
             method: method,
             headers: {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify(palletData)
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(data => {
+                    throw new Error(data.message || 'Palet kaydedilirken bir hata oluştu');
+                });
+            }
+            return response.json();
+        })
+        .then(() => {
+            window.location.reload();
+        })
+        .catch(error => {
+            console.error('Palet kaydetme hatası:', error);
+            alert('Hata: ' + error.message);
         });
-
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.message || 'Palet kaydedilirken bir hata oluştu');
-        }
-
-        window.location.reload();
     } catch (error) {
-        console.error('Palet kaydetme hatası:', error);
+        console.error('Form doğrulama hatası:', error);
         alert('Hata: ' + error.message);
     }
 }
