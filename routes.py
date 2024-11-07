@@ -110,7 +110,7 @@ def export_pallets_csv():
         query = Pallet.query.join(Company).filter(Company.user_id == current_user.id)
         
         if search_term:
-            query = query.filter(Pallet.name.like(f'%{search_term}%'))
+            query = query.filter(Pallet.name.ilike(f'%{search_term}%'))
         if company_id:
             query = query.filter(Pallet.company_id == company_id)
         if min_price is not None:
@@ -173,7 +173,7 @@ def export_pallets_pdf():
         query = Pallet.query.join(Company).filter(Company.user_id == current_user.id)
         
         if search_term:
-            query = query.filter(Pallet.name.like(f'%{search_term}%'))
+            query = query.filter(Pallet.name.ilike(f'%{search_term}%'))
         if company_id:
             query = query.filter(Pallet.company_id == company_id)
         if min_price is not None:
@@ -191,14 +191,15 @@ def export_pallets_pdf():
         # Create PDF buffer
         buffer = io.BytesIO()
         
-        # Set up the document with landscape orientation
+        # Set up the document with landscape orientation and margins
         doc = SimpleDocTemplate(
             buffer,
             pagesize=landscape(A4),
             rightMargin=30,
             leftMargin=30,
             topMargin=30,
-            bottomMargin=30
+            bottomMargin=30,
+            title='Palet Listesi'
         )
         
         # Create styles
@@ -209,10 +210,10 @@ def export_pallets_pdf():
             'CustomNormal',
             parent=styles['Normal'],
             fontName='Helvetica',
-            fontSize=10,
+            fontSize=9,
             leading=12,
             alignment=1,  # Center alignment
-            encoding='utf-8'
+            spaceAfter=6
         )
         
         # Title style
@@ -223,8 +224,7 @@ def export_pallets_pdf():
             fontSize=16,
             leading=20,
             alignment=1,
-            spaceAfter=20,
-            encoding='utf-8'
+            spaceAfter=20
         )
         
         # Prepare document elements
@@ -233,32 +233,19 @@ def export_pallets_pdf():
         # Add title
         elements.append(Paragraph('Palet Listesi', title_style))
         
-        # Prepare table data with Turkish characters
-        data = [[
-            Paragraph('Palet Adı', normal_style),
-            Paragraph('Firma', normal_style),
-            Paragraph('Fiyat (TL)', normal_style),
-            Paragraph('Toplam Hacim (desi)', normal_style),
-            Paragraph('Üst Tahta', normal_style),
-            Paragraph('Alt Tahta', normal_style),
-            Paragraph('Kapama', normal_style),
-            Paragraph('Takoz', normal_style)
-        ]]
+        # Prepare table data
+        headers = [
+            'Palet Adı', 'Firma', 'Fiyat (TL)', 'Toplam Hacim (desi)',
+            'Üst Tahta', 'Alt Tahta', 'Kapama', 'Takoz'
+        ]
+        data = [[Paragraph(header, normal_style) for header in headers]]
         
-        def clean_text(text):
-            """Clean and encode text for PDF"""
+        # Add pallet data
+        for pallet in pallets:
             try:
-                return str(text).encode('utf-8').decode('utf-8').strip()
-            except Exception as e:
-                logger.error(f"Error cleaning text: {str(e)}")
-                return str(text)
-        
-        try:
-            # Add pallet data with proper text cleaning
-            for pallet in pallets:
                 row = [
-                    Paragraph(clean_text(pallet.name), normal_style),
-                    Paragraph(clean_text(pallet.company.name), normal_style),
+                    Paragraph(str(pallet.name), normal_style),
+                    Paragraph(str(pallet.company.name), normal_style),
                     Paragraph(f"{float(pallet.price):.2f}", normal_style),
                     Paragraph(f"{float(pallet.total_volume):.2f}", normal_style),
                     Paragraph(
@@ -279,37 +266,38 @@ def export_pallets_pdf():
                     )
                 ]
                 data.append(row)
-        except Exception as data_error:
-            logger.error(f"Error processing pallet data: {str(data_error)}")
-            raise
+            except Exception as row_error:
+                logger.error(f"Error processing pallet row: {str(row_error)}")
+                continue
         
-        # Create table with styling
-        colWidths = [100, 80, 60, 70, 100, 100, 100, 100]  # Adjusted column widths
+        # Create table with adjusted column widths
+        colWidths = [90, 80, 60, 70, 100, 100, 100, 100]
         table = Table(data, colWidths=colWidths, repeatRows=1)
+        
+        # Apply table styling
         table.setStyle(TableStyle([
             # Header styling
             ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#2a2e35')),
             ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
             ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
             ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-            ('FONTSIZE', (0, 0), (-1, 0), 12),
+            ('FONTSIZE', (0, 0), (-1, 0), 11),
             ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
             
             # Content styling
             ('BACKGROUND', (0, 1), (-1, -1), colors.white),
             ('TEXTCOLOR', (0, 1), (-1, -1), colors.black),
             ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
-            ('FONTSIZE', (0, 1), (-1, -1), 10),
+            ('FONTSIZE', (0, 1), (-1, -1), 9),
             ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
             ('GRID', (0, 0), (-1, -1), 1, colors.black),
             ('ROWHEIGHT', (0, 0), (-1, -1), 40),
-            ('WORDWRAP', (0, 0), (-1, -1), True)
         ]))
         
         elements.append(table)
 
         try:
-            # Build PDF with error handling
+            # Build PDF
             doc.build(elements)
             buffer.seek(0)
             
@@ -320,15 +308,174 @@ def export_pallets_pdf():
                 download_name='paletler.pdf'
             )
             
-            # Add Turkish character encoding headers
-            response.headers['Content-Type'] = 'application/pdf; charset=utf-8'
             return response
             
         except Exception as build_error:
             logger.error(f"Error building PDF: {str(build_error)}")
-            raise
+            flash('PDF oluşturulurken bir hata oluştu. Lütfen daha sonra tekrar deneyin.', 'danger')
+            return redirect(url_for('pallets'))
         
     except Exception as e:
         logger.error(f"PDF export error: {str(e)}")
         flash('PDF oluşturulurken bir hata oluştu. Lütfen daha sonra tekrar deneyin.', 'danger')
         return redirect(url_for('pallets'))
+
+@app.route('/api/companies', methods=['GET', 'POST'])
+@login_required
+def api_companies():
+    if request.method == 'POST':
+        try:
+            data = request.get_json()
+            company = Company(
+                name=data['name'],
+                contact_email=data['contact_email'],
+                user_id=current_user.id
+            )
+            db.session.add(company)
+            db.session.commit()
+            return jsonify({'message': 'Firma başarıyla eklendi'})
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'message': str(e)}), 400
+    
+    companies = Company.query.filter_by(user_id=current_user.id).all()
+    return jsonify([{
+        'id': c.id,
+        'name': c.name,
+        'contact_email': c.contact_email
+    } for c in companies])
+
+@app.route('/api/companies/<int:company_id>', methods=['GET', 'PUT', 'DELETE'])
+@login_required
+def api_company(company_id):
+    company = Company.query.filter_by(id=company_id, user_id=current_user.id).first_or_404()
+    
+    if request.method == 'GET':
+        return jsonify({
+            'id': company.id,
+            'name': company.name,
+            'contact_email': company.contact_email
+        })
+    
+    elif request.method == 'PUT':
+        try:
+            data = request.get_json()
+            company.name = data['name']
+            company.contact_email = data['contact_email']
+            db.session.commit()
+            return jsonify({'message': 'Firma başarıyla güncellendi'})
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'message': str(e)}), 400
+    
+    elif request.method == 'DELETE':
+        try:
+            db.session.delete(company)
+            db.session.commit()
+            return jsonify({'message': 'Firma başarıyla silindi'})
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'message': str(e)}), 400
+
+@app.route('/api/pallets', methods=['GET', 'POST'])
+@login_required
+def api_pallets():
+    if request.method == 'POST':
+        try:
+            data = request.get_json()
+            
+            # Verify company ownership
+            company = Company.query.filter_by(id=data['company_id'], user_id=current_user.id).first()
+            if not company:
+                return jsonify({'message': 'Firma bulunamadı'}), 404
+            
+            pallet = Pallet(**data)
+            
+            # Calculate volumes
+            volumes = calculate_component_volumes(pallet)
+            pallet.upper_board_desi = volumes['upper_board_desi']
+            pallet.lower_board_desi = volumes['lower_board_desi']
+            pallet.closure_desi = volumes['closure_desi']
+            pallet.block_desi = volumes['block_desi']
+            pallet.total_volume = volumes['total_desi']
+            
+            db.session.add(pallet)
+            db.session.commit()
+            
+            return jsonify({'message': 'Palet başarıyla eklendi'})
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'message': str(e)}), 400
+    
+    pallets = Pallet.query.join(Company).filter(Company.user_id == current_user.id).all()
+    return jsonify([{
+        'id': p.id,
+        'name': p.name,
+        'company_id': p.company_id,
+        'price': float(p.price),
+        'total_volume': float(p.total_volume)
+    } for p in pallets])
+
+@app.route('/api/pallets/<int:pallet_id>', methods=['GET', 'PUT', 'DELETE'])
+@login_required
+def api_pallet(pallet_id):
+    pallet = Pallet.query.join(Company).filter(
+        Pallet.id == pallet_id,
+        Company.user_id == current_user.id
+    ).first_or_404()
+    
+    if request.method == 'GET':
+        return jsonify({
+            'id': pallet.id,
+            'name': pallet.name,
+            'company_id': pallet.company_id,
+            'price': float(pallet.price),
+            'board_thickness': float(pallet.board_thickness),
+            'upper_board_length': float(pallet.upper_board_length),
+            'upper_board_width': float(pallet.upper_board_width),
+            'upper_board_quantity': pallet.upper_board_quantity,
+            'lower_board_length': float(pallet.lower_board_length),
+            'lower_board_width': float(pallet.lower_board_width),
+            'lower_board_quantity': pallet.lower_board_quantity,
+            'closure_length': float(pallet.closure_length),
+            'closure_width': float(pallet.closure_width),
+            'closure_quantity': pallet.closure_quantity,
+            'block_length': float(pallet.block_length),
+            'block_width': float(pallet.block_width),
+            'block_height': float(pallet.block_height)
+        })
+    
+    elif request.method == 'PUT':
+        try:
+            data = request.get_json()
+            
+            # Verify company ownership
+            company = Company.query.filter_by(id=data['company_id'], user_id=current_user.id).first()
+            if not company:
+                return jsonify({'message': 'Firma bulunamadı'}), 404
+            
+            for key, value in data.items():
+                setattr(pallet, key, value)
+            
+            # Recalculate volumes
+            volumes = calculate_component_volumes(pallet)
+            pallet.upper_board_desi = volumes['upper_board_desi']
+            pallet.lower_board_desi = volumes['lower_board_desi']
+            pallet.closure_desi = volumes['closure_desi']
+            pallet.block_desi = volumes['block_desi']
+            pallet.total_volume = volumes['total_desi']
+            
+            db.session.commit()
+            return jsonify({'message': 'Palet başarıyla güncellendi'})
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'message': str(e)}), 400
+    
+    elif request.method == 'DELETE':
+        try:
+            db.session.delete(pallet)
+            db.session.commit()
+            return jsonify({'message': 'Palet başarıyla silindi'})
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'message': str(e)}), 400
