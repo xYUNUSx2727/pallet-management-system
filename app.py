@@ -34,7 +34,7 @@ def create_app():
         DATABASE_URL = os.environ.get('DATABASE_URL')
         
         if not DATABASE_URL:
-            # Get MySQL connection parameters
+            # Convert PostgreSQL environment variables to MySQL format
             db_params = {
                 'user': os.environ.get('PGUSER'),
                 'password': os.environ.get('PGPASSWORD'),

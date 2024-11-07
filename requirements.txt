@@ -7,7 +7,7 @@ reportlab
 Werkzeug
 cryptography
 SQLAlchemy>=2.0.0
-pymysql
-flask-sqlalchemy
 requests
+flask-sqlalchemy
+pymysql
 sqlalchemy
