@@ -9,7 +9,7 @@ document.addEventListener('DOMContentLoaded', function() {
     };
 
     // Add event listeners for filters
-    Object.values(filterElements).forEach(element => {
+    Object.values(filterElements).forEach(function(element) {
         if (element) {
             element.addEventListener('input', filterAndSortPallets);
         }
@@ -22,8 +22,8 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Initialize edit buttons
-    document.querySelectorAll('.edit-pallet').forEach(button => {
-        button.addEventListener('click', async (e) => {
+    Array.prototype.forEach.call(document.querySelectorAll('.edit-pallet'), function(button) {
+        button.addEventListener('click', async function(e) {
             try {
                 const palletId = e.currentTarget.dataset.id;
                 const response = await fetch(`/api/pallets/${palletId}`);
@@ -41,8 +41,8 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Initialize delete buttons
-    document.querySelectorAll('.delete-pallet').forEach(button => {
-        button.addEventListener('click', async (e) => {
+    Array.prototype.forEach.call(document.querySelectorAll('.delete-pallet'), function(button) {
+        button.addEventListener('click', async function(e) {
             if (!confirm('Bu paleti silmek istediğinizden emin misiniz?')) {
                 return;
             }
@@ -71,7 +71,7 @@ document.addEventListener('DOMContentLoaded', function() {
         'blockLength', 'blockWidth', 'blockHeight'
     ];
 
-    dimensionInputs.forEach(inputId => {
+    dimensionInputs.forEach(function(inputId) {
         const input = document.getElementById(inputId);
         if (input) {
             input.addEventListener('input', calculateDesi);
@@ -92,14 +92,14 @@ function filterAndSortPallets() {
 
     let items = [];
     if (palletsList) {
-        items = Array.from(palletsList.getElementsByTagName('tr'));
+        items = Array.prototype.slice.call(palletsList.getElementsByTagName('tr'));
     } else if (palletsAccordion) {
-        items = Array.from(palletsAccordion.getElementsByClassName('accordion-item'));
+        items = Array.prototype.slice.call(palletsAccordion.getElementsByClassName('accordion-item'));
     }
 
     let visibleCount = 0;
 
-    items.forEach(item => {
+    items.forEach(function(item) {
         const itemName = item.querySelector('td:first-child, .accordion-button')?.textContent.toLowerCase() || '';
         const itemCompanyId = item.dataset.companyId;
         const itemPrice = parseFloat(item.dataset.price) || 0;
@@ -115,9 +115,9 @@ function filterAndSortPallets() {
     });
 
     if (visibleCount > 0 && sortOrder) {
-        const sortedItems = Array.from(items)
-            .filter(item => item.style.display !== 'none')
-            .sort((a, b) => {
+        const sortedItems = items
+            .filter(function(item) { return item.style.display !== 'none'; })
+            .sort(function(a, b) {
                 const aValue = getSortValue(a, sortOrder);
                 const bValue = getSortValue(b, sortOrder);
                 return sortOrder.includes('desc') ? bValue - aValue : aValue - bValue;
@@ -125,7 +125,7 @@ function filterAndSortPallets() {
 
         const container = palletsList || palletsAccordion;
         if (container) {
-            sortedItems.forEach(item => container.appendChild(item));
+            sortedItems.forEach(function(item) { container.appendChild(item); });
         }
     }
 
@@ -149,7 +149,7 @@ function getSortValue(item, sortOrder) {
 
 function calculateDesi() {
     try {
-        const getValue = (id) => parseFloat(document.getElementById(id)?.value) || 0;
+        const getValue = function(id) { return parseFloat(document.getElementById(id)?.value) || 0; };
 
         const thickness = getValue('boardThickness');
         
@@ -186,7 +186,7 @@ function calculateDesi() {
             'totalDesi': upperDesi + lowerDesi + closureDesi + blockDesi
         };
 
-        Object.entries(elements).forEach(([id, value]) => {
+        Object.entries(elements).forEach(function([id, value]) {
             const element = document.getElementById(id);
             if (element) {
                 element.textContent = value.toFixed(2);
@@ -217,14 +217,14 @@ function validatePalletData(data) {
         block_height: 'Takoz yüksekliği'
     };
 
-    for (const [field, label] of Object.entries(requiredFields)) {
+    Object.entries(requiredFields).forEach(function([field, label]) {
         if (!data[field] && data[field] !== 0) {
             throw new Error(`${label} alanı boş bırakılamaz`);
         }
         if (typeof data[field] === 'number' && data[field] <= 0) {
             throw new Error(`${label} için geçerli bir değer giriniz`);
         }
-    }
+    });
     return true;
 }
 

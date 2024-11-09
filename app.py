@@ -121,7 +121,8 @@ with app.app_context():
         logger.info("Database tables created successfully")
         
         # Import routes after db initialization
-        from routes import *
+        import auth  # Import authentication routes
+        from routes import *  # Import other routes
         
         # Only seed data if tables are empty
         from models import User
